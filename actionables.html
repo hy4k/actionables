@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FETS · Actionables!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --ink:#111; --paper:#FFFDF2;
+  --yellow:#ffea00; --pink:#ff007f; --cyan:#00d4ff; --orange:#ff5100; --green:#00e05c; --violet:#b14bf4;
+  --sketch:255px 15px 225px 15px / 15px 225px 15px 255px;
+  --sketch2:15px 225px 15px 255px / 225px 15px 255px 15px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Comic Neue',"Comic Sans MS",cursive;font-weight:700;font-size:15.5px;line-height:1.5;color:var(--ink);
+  background:var(--paper);
+  background-image:radial-gradient(#e7e2ce 1.5px, transparent 1.5px);
+  background-size:26px 26px;
+}
+h1,h2,h3,.logo,.code-badge,.nav-btn,.btn,.pill,.section-label{font-family:'Bangers',cursive;font-weight:400;letter-spacing:.04em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{
+  font-family:'Comic Neue',cursive;font-weight:700;font-size:15px;color:var(--ink);
+  background:#fff;border:3px solid var(--ink);border-radius:12px 100px 12px 100px / 100px 12px 100px 12px;
+  padding:12px 16px;width:100%;outline:none;transition:box-shadow .15s;
+}
+input:focus,textarea:focus,select:focus{box-shadow:4px 4px 0 var(--cyan)}
+label{display:block;font-family:'Bangers',cursive;font-size:15px;letter-spacing:.06em;margin:18px 0 6px;color:var(--ink)}
+::placeholder{color:#999;font-weight:400}
+
+@keyframes wobble{0%{transform:rotate(-1.5deg) scale(1.01)}100%{transform:rotate(1.5deg) scale(1.01)}}
+@keyframes bounce-ltr{0%{transform:translateY(0) rotate(-3deg)}100%{transform:translateY(-4px) rotate(4deg)}}
+@keyframes float-star{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(-10px) rotate(-20deg)}}
+
+/* ---------- identity picker (modal) ---------- */
+#pickModal{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:50;background:rgba(17,17,17,.6);overflow:hidden}
+.pick-card{position:relative;background:var(--paper);border:3px solid var(--ink);border-radius:24px 60px 24px 60px / 60px 24px 60px 24px;box-shadow:6px 6px 0 var(--pink),12px 12px 0 var(--ink);padding:46px 54px;text-align:center;max-width:780px;width:94%}
+.hero-star{position:absolute;font-size:42px;-webkit-text-stroke:2px var(--ink);animation:float-star 1.6s ease-in-out infinite alternate;pointer-events:none}
+.hero-title{font-family:'Bangers',cursive;font-size:clamp(44px,7vw,84px);letter-spacing:.03em;text-align:center;line-height:1.02;
+  text-shadow:-2px -2px 0 #fff,2px -2px 0 #fff,-2px 2px 0 #fff,2px 2px 0 #fff,5px 6px 0 var(--pink),9px 10px 0 var(--cyan);}
+.hero-title .zap{color:var(--yellow);-webkit-text-stroke:2.5px var(--ink);text-shadow:4px 5px 0 var(--ink)}
+.hero-sub{margin:18px 0 40px;font-size:19px;background:#fff;border:3px solid var(--ink);border-radius:var(--sketch);padding:10px 26px;transform:rotate(-1deg);box-shadow:4px 4px 0 var(--ink)}
+.staff-btns{display:flex;flex-wrap:wrap;gap:26px;justify-content:center;max-width:820px;padding:0 20px}
+.staff-btn{
+  position:relative;display:flex;align-items:center;gap:14px;padding:16px 30px;
+  background:var(--yellow);border:3px solid var(--ink);border-radius:var(--sketch);
+  box-shadow:4px 4px 0 var(--pink),8px 8px 0 var(--cyan),12px 12px 0 var(--ink);
+  font-family:'Bangers',cursive;font-size:22px;letter-spacing:.05em;
+  transition:transform .2s cubic-bezier(.175,.885,.32,1.275);
+}
+.staff-btn:hover{animation:wobble .4s ease-in-out infinite alternate}
+.staff-btn:active{transform:scale(.92) translateY(6px);box-shadow:2px 2px 0 var(--pink),4px 4px 0 var(--cyan),6px 6px 0 var(--ink)}
+.staff-btn .role{font-family:'Comic Neue';font-size:12px;font-weight:700;display:block;letter-spacing:0}
+.staff-btn .shine{position:absolute;top:7px;left:14px;width:38px;height:9px;background:#fff;border:2px solid var(--ink);border-radius:var(--sketch);transform:rotate(-4deg);opacity:.9}
+
+/* ---------- avatars ---------- */
+.avatar{width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:'Bangers';font-size:15px;color:#fff;flex-shrink:0;border:2.5px solid var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.avatar.sm{width:30px;height:30px;font-size:12px;box-shadow:1.5px 1.5px 0 var(--ink)}
+
+/* ---------- layout ---------- */
+#app{display:none;min-height:100vh}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:270px;flex-shrink:0;padding:34px 20px;display:flex;flex-direction:column;gap:12px;background:#fff;border-right:3px solid var(--ink);position:sticky;top:0;height:100vh}
+.logo{font-size:27px;padding:0 8px 22px;line-height:1;text-shadow:2px 2px 0 var(--yellow),4px 4px 0 var(--ink)}
+.logo span{color:var(--pink);-webkit-text-stroke:1px var(--ink)}
+.nav-btn{display:flex;align-items:center;gap:11px;width:100%;padding:12px 14px;font-size:18px;letter-spacing:.05em;text-align:left;
+  border:3px solid transparent;border-radius:var(--sketch);transition:all .12s}
+.nav-btn .ico{font-size:17px;width:24px;text-align:center}
+.nav-btn .count{margin-left:auto;font-family:'Comic Neue';font-weight:700;font-size:12.5px;background:var(--ink);color:#fff;border-radius:50%;min-width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+.nav-btn:hover{border-color:var(--ink);background:var(--paper);transform:rotate(-.6deg)}
+.nav-btn.active{background:var(--yellow);border-color:var(--ink);box-shadow:3px 3px 0 var(--pink),6px 6px 0 var(--ink)}
+.nav-btn.active .count{background:var(--pink)}
+.nav-sep{border-top:3px dashed var(--ink);margin:10px 6px;opacity:.25}
+.user-chip{margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px 14px;background:var(--paper);border:3px solid var(--ink);border-radius:var(--sketch2);box-shadow:3px 3px 0 var(--cyan)}
+.user-chip .nm{font-family:'Bangers';font-size:17px;letter-spacing:.04em;line-height:1}
+.user-chip .rl{font-size:11.5px;color:#666}
+.user-chip .sw{margin-left:auto;font-family:'Bangers';font-size:14px;color:var(--pink);letter-spacing:.05em}
+.user-chip .sw:hover{text-decoration:underline wavy}
+.main{flex:1;padding:48px 60px;max-width:1140px}
+.page-head{margin-bottom:34px}
+.page-head h1{font-size:42px;line-height:1;text-shadow:-1.5px -1.5px 0 #fff,1.5px -1.5px 0 #fff,-1.5px 1.5px 0 #fff,1.5px 1.5px 0 #fff,3px 4px 0 var(--pink)}
+.page-head p{margin-top:10px;max-width:640px;color:#444}
+
+/* ---------- cards ---------- */
+.card-list{display:flex;flex-direction:column;gap:22px}
+.act-card{background:#fff;border:3px solid var(--ink);border-radius:var(--sketch);padding:22px 28px;display:flex;align-items:center;gap:22px;cursor:pointer;
+  box-shadow:5px 5px 0 var(--ink);transition:transform .18s cubic-bezier(.175,.885,.32,1.275),box-shadow .18s}
+.act-card:hover{transform:translate(-2px,-3px) rotate(-.5deg);box-shadow:4px 4px 0 var(--pink),8px 8px 0 var(--cyan),12px 12px 0 var(--ink)}
+.act-card:nth-child(even):hover{transform:translate(-2px,-3px) rotate(.5deg)}
+.code-badge{font-size:17px;letter-spacing:.08em;background:var(--ink);color:var(--yellow);border-radius:var(--sketch2);padding:9px 15px;flex-shrink:0;border:3px solid var(--ink);box-shadow:2.5px 2.5px 0 var(--pink)}
+.act-card .body{flex:1;min-width:0}
+.act-card .title{font-family:'Bangers';font-size:22px;letter-spacing:.04em}
+.act-card .sub{color:#666;font-size:13.5px;font-weight:400;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px}
+.act-card .meta{display:flex;align-items:center;gap:16px;flex-shrink:0}
+.avatars{display:flex}
+.avatars .avatar{margin-left:-9px}
+.avatars .avatar:first-child{margin-left:0}
+.pill{font-size:14.5px;letter-spacing:.06em;border:2.5px solid var(--ink);border-radius:var(--sketch);padding:6px 15px;white-space:nowrap;box-shadow:2px 2px 0 var(--ink);color:var(--ink)}
+.pill.in_progress{background:var(--cyan)}
+.pill.pending{background:var(--yellow)}
+.pill.submitted{background:var(--violet);color:#fff}
+.pill.completed{background:var(--green)}
+.empty{text-align:center;padding:80px 20px;color:#777}
+.empty .big{font-size:52px;margin-bottom:12px}
+.section-label{font-size:20px;letter-spacing:.06em;margin:36px 0 16px;display:inline-block;background:#fff;border:3px solid var(--ink);border-radius:var(--sketch);padding:6px 18px;transform:rotate(-1deg);box-shadow:3px 3px 0 var(--yellow)}
+.section-label:first-of-type{margin-top:0}
+
+/* ---------- detail ---------- */
+.back{font-family:'Bangers';font-size:17px;letter-spacing:.05em;margin-bottom:24px;display:inline-flex;gap:8px;align-items:center;background:#fff;border:3px solid var(--ink);border-radius:var(--sketch);padding:7px 18px;box-shadow:3px 3px 0 var(--ink);transition:transform .15s}
+.back:hover{transform:translate(-1px,-2px);box-shadow:3px 3px 0 var(--pink),6px 6px 0 var(--ink)}
+.detail-head{display:flex;align-items:center;gap:18px;margin-bottom:8px;flex-wrap:wrap}
+.detail-head h1{font-size:38px;flex:1;min-width:200px;line-height:1;text-shadow:-1.5px -1.5px 0 #fff,1.5px -1.5px 0 #fff,-1.5px 1.5px 0 #fff,1.5px 1.5px 0 #fff,3px 4px 0 var(--cyan)}
+.detail-desc{color:#444;max-width:740px;margin:12px 0 26px}
+.detail-grid{display:grid;grid-template-columns:1fr 340px;gap:26px;align-items:start}
+@media(max-width:1000px){.detail-grid{grid-template-columns:1fr}.main{padding:32px 20px}.sidebar{display:none}}
+.panel{background:#fff;border:3px solid var(--ink);border-radius:var(--sketch);padding:24px 26px;box-shadow:5px 5px 0 var(--ink)}
+.panel h3{font-size:21px;letter-spacing:.05em;margin-bottom:16px;text-shadow:2px 2px 0 var(--yellow)}
+.panel + .panel{margin-top:26px}
+.feed{display:flex;flex-direction:column;gap:15px;max-height:520px;overflow-y:auto;padding-right:6px}
+.feed-item{display:flex;gap:12px}
+.feed-item .bubble{background:var(--paper);border:2.5px solid var(--ink);border-radius:4px 18px 18px 18px;padding:11px 15px;flex:1}
+.feed-item.instruction .bubble{background:#FFF7CC;box-shadow:2.5px 2.5px 0 var(--orange)}
+.feed-item.submission .bubble{background:#F3E8FF;box-shadow:2.5px 2.5px 0 var(--violet)}
+.feed-item .who{font-size:13.5px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.feed-item .when{font-weight:400;color:#888;font-size:12px}
+.feed-item .tag{font-family:'Bangers';font-size:12.5px;letter-spacing:.08em;color:var(--orange)}
+.feed-item.submission .tag{color:var(--violet)}
+.feed-item .msg{margin-top:3px;font-size:14px;font-weight:400;white-space:pre-wrap}
+.composer{display:flex;gap:10px;margin-top:16px}
+.composer textarea{resize:none;height:76px;border-radius:14px}
+.members{display:flex;flex-direction:column;gap:12px}
+.member-row{display:flex;align-items:center;gap:12px}
+.member-row .lead-tag{margin-left:auto;font-family:'Bangers';font-size:12.5px;letter-spacing:.08em;color:#fff;background:var(--pink);border:2px solid var(--ink);border-radius:var(--sketch);padding:2px 11px;box-shadow:1.5px 1.5px 0 var(--ink)}
+.data-list{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.data-row{background:var(--paper);border:2.5px solid var(--ink);border-radius:14px;padding:11px 15px;box-shadow:2px 2px 0 var(--cyan)}
+.data-row .lbl{font-size:14px}
+.data-row .val{font-size:13.5px;font-weight:400;color:#444;margin-top:2px;white-space:pre-wrap}
+.data-row .byline{font-size:11px;font-weight:400;color:#999;margin-top:5px}
+.file-row{display:flex;align-items:center;gap:12px;background:var(--paper);border:2.5px solid var(--ink);border-radius:14px;padding:10px 15px;box-shadow:2px 2px 0 var(--pink);margin-bottom:10px;text-decoration:none;color:var(--ink);transition:transform .12s}
+.file-row:hover{transform:translate(-1px,-2px) rotate(-.4deg)}
+.file-row .fico{font-size:22px}
+.file-row .fname{font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-row .fmeta{font-size:11px;font-weight:400;color:#999}
+.file-row .dl{font-family:'Bangers';font-size:14px;color:var(--pink);letter-spacing:.05em}
+.kv{display:flex;justify-content:space-between;font-size:14px;padding:7px 0;border-bottom:2px dashed #ddd}
+.kv:last-child{border-bottom:none}
+.kv .k{color:#888;font-weight:400}
+
+/* ---------- buttons ---------- */
+.btn{position:relative;display:inline-flex;align-items:center;gap:8px;font-size:18px;letter-spacing:.06em;border:3px solid var(--ink);border-radius:var(--sketch);padding:11px 22px;background:#fff;color:var(--ink);
+  transition:transform .18s cubic-bezier(.175,.885,.32,1.275),box-shadow .18s;box-shadow:3px 3px 0 var(--ink)}
+.btn:hover{animation:wobble .4s ease-in-out infinite alternate}
+.btn:active{transform:scale(.92) translateY(4px);box-shadow:1px 1px 0 var(--ink)}
+.btn.primary{background:var(--yellow);box-shadow:3px 3px 0 var(--pink),6px 6px 0 var(--cyan),9px 9px 0 var(--ink)}
+.btn.primary:active{box-shadow:2px 2px 0 var(--pink),3px 3px 0 var(--cyan),4px 4px 0 var(--ink)}
+.btn.green{background:var(--green);box-shadow:3px 3px 0 var(--cyan),6px 6px 0 var(--ink)}
+.btn.pink{background:var(--pink);color:#fff}
+.btn.sm{font-size:15px;padding:7px 15px;box-shadow:2.5px 2.5px 0 var(--ink)}
+.btn:disabled{opacity:.5;cursor:default;animation:none}
+.actions-row{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 30px}
+
+/* ---------- assign / settings ---------- */
+.form-card{background:#fff;border:3px solid var(--ink);border-radius:24px 60px 24px 60px / 60px 24px 60px 24px;padding:38px 42px;max-width:660px;box-shadow:6px 6px 0 var(--yellow),12px 12px 0 var(--ink)}
+.code-preview{display:inline-flex;align-items:center;gap:10px;background:var(--ink);color:var(--yellow);font-family:'Bangers';font-size:20px;letter-spacing:.08em;border-radius:var(--sketch2);padding:9px 18px;margin-bottom:8px;box-shadow:3px 3px 0 var(--pink)}
+.code-preview small{font-family:'Comic Neue';font-size:11.5px;color:#fff;letter-spacing:0}
+.check-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border:2.5px solid var(--ink);border-radius:var(--sketch);margin-bottom:10px;cursor:pointer;transition:all .12s;background:#fff;box-shadow:2px 2px 0 var(--ink)}
+.check-row:hover{transform:rotate(-.5deg)}
+.check-row.on{background:var(--yellow);box-shadow:2px 2px 0 var(--pink),4px 4px 0 var(--ink)}
+.check-row input{width:auto;accent-color:var(--pink)}
+.hint{font-size:13px;font-weight:400;color:#777;margin-top:8px}
+.steps{font-size:14px;font-weight:400;color:#444;background:var(--paper);border:2.5px dashed var(--ink);border-radius:16px;padding:16px 20px;margin-top:20px}
+.steps b{font-weight:700}
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) rotate(-1deg);background:var(--ink);color:var(--yellow);font-family:'Bangers';font-size:18px;letter-spacing:.06em;padding:13px 28px;border-radius:var(--sketch);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--pink);opacity:0;pointer-events:none;transition:opacity .25s;z-index:99}
+.toast.show{opacity:1}
+.inline-add{display:flex;gap:8px;margin-top:14px}
+.spin{text-align:center;padding:80px;color:#888;font-family:'Bangers';font-size:22px;letter-spacing:.06em}
+
+/* ---------- team dashboard ---------- */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:28px;align-items:start}
+.staff-card{background:#fff;border:3px solid var(--ink);border-radius:var(--sketch);padding:22px 24px;box-shadow:5px 5px 0 var(--ink);transition:transform .18s cubic-bezier(.175,.885,.32,1.275),box-shadow .18s}
+.dash-grid .staff-card:nth-child(odd){transform:rotate(-.5deg)}
+.dash-grid .staff-card:nth-child(even){transform:rotate(.5deg)}
+.staff-card:hover{transform:translateY(-4px) rotate(0);box-shadow:4px 4px 0 var(--pink),8px 8px 0 var(--cyan),12px 12px 0 var(--ink)}
+.sc-head{display:flex;gap:13px;align-items:center;border-bottom:3px dashed #e0dccb;padding-bottom:14px;margin-bottom:6px}
+.sc-name{font-family:'Bangers';font-size:23px;letter-spacing:.04em;line-height:1}
+.sc-role{font-size:12px;font-weight:400;color:#888;margin-top:3px}
+.sc-count{margin-left:auto;font-family:'Bangers';font-size:14px;letter-spacing:.05em;background:var(--yellow);border:2.5px solid var(--ink);border-radius:var(--sketch);padding:4px 12px;box-shadow:2px 2px 0 var(--ink);white-space:nowrap}
+.sc-count.zero{background:#eee;color:#999;box-shadow:none}
+.sc-label{font-family:'Bangers';font-size:15px;letter-spacing:.08em;color:var(--pink);margin:13px 0 8px}
+.sc-label.done{color:#0a8a44}
+.mini-act{display:flex;align-items:center;gap:10px;background:var(--paper);border:2.5px solid var(--ink);border-radius:14px;padding:9px 12px;margin-bottom:8px;cursor:pointer;box-shadow:2.5px 2.5px 0 var(--yellow);transition:transform .12s}
+.mini-act:hover{transform:translate(-1px,-2px) rotate(-.5deg);box-shadow:2.5px 2.5px 0 var(--pink)}
+.mini-act .mcode{font-family:'Bangers';font-size:13px;letter-spacing:.06em;background:var(--ink);color:var(--yellow);border-radius:8px;padding:2px 9px;flex-shrink:0}
+.mini-act .mtitle{font-size:13.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini-act .pill{font-size:11px;padding:2px 9px;box-shadow:1.5px 1.5px 0 var(--ink);flex-shrink:0}
+.mini-act.done{background:#EAF9EF;box-shadow:2.5px 2.5px 0 #9be0b6}
+.mini-act.done .mtitle{text-decoration:line-through;color:#7a8a80}
+.mini-act.done .mcode{background:#0a8a44;color:#fff}
+.sc-free{font-size:13.5px;font-weight:400;color:#aaa;font-style:italic;padding:10px 0 2px}
+
+/* ---------- detail v2: header card, steps, tools ---------- */
+.head-card{background:#fff;border:3px solid var(--ink);border-radius:24px 60px 24px 60px / 60px 24px 60px 24px;padding:26px 32px;box-shadow:6px 6px 0 var(--yellow),12px 12px 0 var(--ink);margin-bottom:32px}
+.head-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.head-row h1{font-size:36px;line-height:1;flex:1;min-width:200px;text-shadow:-1.5px -1.5px 0 #fff,1.5px -1.5px 0 #fff,-1.5px 1.5px 0 #fff,1.5px 1.5px 0 #fff,3px 4px 0 var(--cyan)}
+.head-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:28px;margin-top:22px;padding-top:20px;border-top:3px dashed #e0dccb}
+@media(max-width:900px){.head-grid{grid-template-columns:1fr}}
+.mini-head{font-family:'Bangers';font-size:16px;letter-spacing:.08em;color:var(--pink);margin-bottom:10px}
+.points{list-style:none}
+.points li{position:relative;padding:4px 0 4px 30px;font-size:14.5px}
+.points li::before{content:"⚡";position:absolute;left:2px;top:4px}
+.team-chips{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.team-chip{display:inline-flex;align-items:center;gap:8px;background:var(--paper);border:2.5px solid var(--ink);border-radius:99px;padding:4px 14px 4px 5px;box-shadow:2px 2px 0 var(--cyan);font-size:14px}
+.team-chip .lead-tag{font-family:'Bangers';font-size:11px;letter-spacing:.06em;color:#fff;background:var(--pink);border:2px solid var(--ink);border-radius:99px;padding:1px 8px}
+.facts{display:flex;flex-wrap:wrap;gap:10px}
+.fact{font-size:12.5px;background:var(--paper);border:2px solid var(--ink);border-radius:10px;padding:4px 11px;box-shadow:1.5px 1.5px 0 var(--ink);white-space:nowrap}
+.steps-list{display:flex;flex-direction:column;gap:14px}
+.step{display:flex;gap:14px;align-items:flex-start}
+.step-no{font-family:'Bangers';font-size:19px;width:38px;height:38px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:var(--yellow);border:3px solid var(--ink);border-radius:50% 40% 55% 45%;box-shadow:2px 2px 0 var(--ink)}
+.step-body{flex:1;background:#FFF7CC;border:2.5px solid var(--ink);border-radius:4px 18px 18px 18px;padding:11px 16px;box-shadow:2.5px 2.5px 0 var(--orange)}
+.step-body .msg{font-size:14.5px;white-space:pre-wrap}
+.step-meta{font-size:11.5px;font-weight:400;color:#a08d50;margin-top:5px}
+.byline-h{font-family:'Comic Neue';font-size:12.5px;font-weight:700;color:#999;letter-spacing:0;margin-left:8px}
+.soft{color:#999;font-weight:400;font-size:14px}
+.row-tools{margin-left:auto;display:inline-flex;gap:6px;flex-shrink:0}
+.tool{font-size:13px;background:#fff;border:2px solid var(--ink);border-radius:9px;padding:2px 8px;box-shadow:1.5px 1.5px 0 var(--ink);transition:transform .12s}
+.tool:hover{transform:translate(-1px,-1px) rotate(-3deg)}
+.dr-top{display:flex;align-items:flex-start;gap:8px}
+
+/* ---------- standards document ---------- */
+.std-table-wrap{overflow-x:auto}
+.std-table{width:100%;border-collapse:separate;border-spacing:0;border:3px solid var(--ink);border-radius:14px;overflow:hidden;background:#fff}
+.std-table th{background:var(--yellow);font-family:'Bangers';font-size:16px;letter-spacing:.05em;padding:11px 15px;border-bottom:3px solid var(--ink);text-align:left;white-space:nowrap}
+.std-table th+th,.std-table td+td{border-left:2px solid #e5e0d0}
+.std-table th:first-child{background:var(--ink);color:var(--yellow)}
+.std-table td{padding:11px 15px;font-size:13.5px;font-weight:400;border-bottom:2px solid #e5e0d0;vertical-align:top;white-space:pre-wrap;min-width:170px}
+.std-table tr:last-child td{border-bottom:none}
+.std-table td:first-child{font-weight:700;background:var(--paper);min-width:130px}
+.doc-stamp{display:inline-flex;align-items:center;gap:8px;font-family:'Bangers';font-size:15px;letter-spacing:.06em;color:#0a8a44;border:3px solid #0a8a44;border-radius:var(--sketch);padding:5px 16px;transform:rotate(-2deg)}
+details.history{margin-top:26px}
+details.history summary{font-family:'Bangers';font-size:18px;letter-spacing:.05em;cursor:pointer;background:#fff;border:3px solid var(--ink);border-radius:var(--sketch);padding:10px 20px;box-shadow:3px 3px 0 var(--ink);display:inline-block}
+details.history[open] summary{box-shadow:1px 1px 0 var(--ink)}
+details.history .inner{margin-top:16px}
+@media print{
+  .sidebar,.back,.btn,.toast,details.history,#pickModal{display:none !important}
+  body{background:#fff}
+  .main{padding:0;max-width:100%}
+  .head-card,.panel{box-shadow:none;border-radius:12px;page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<div id="pickModal">
+  <div class="pick-card">
+    <span class="hero-star" style="top:-30px;left:-26px;color:var(--yellow)">★</span>
+    <span class="hero-star" style="bottom:-26px;right:-24px;color:var(--cyan);animation-delay:.4s">★</span>
+    <div class="hero-title" style="font-size:44px">WHO ARE YOU?<span class="zap">⚡</span></div>
+    <div class="hero-sub">Pick your name to post updates, data & files</div>
+    <div class="staff-btns" id="staffBtns"><div class="spin">Loading team…</div></div>
+  </div>
+</div>
+
+<div id="app" style="display:block"><div class="shell">
+  <aside class="sidebar">
+    <div class="logo">FETS <span>ACTIONABLES!</span></div>
+    <button class="nav-btn" data-view="dash"><span class="ico">🏠</span> Dashboard</button>
+    <button class="nav-btn" data-view="my"><span class="ico">🎯</span> My Actionables <span class="count" id="c-my">0</span></button>
+    <button class="nav-btn" data-view="team"><span class="ico">👥</span> Team Actionables <span class="count" id="c-team">0</span></button>
+    <button class="nav-btn" data-view="pending"><span class="ico">⏳</span> Pending <span class="count" id="c-pending">0</span></button>
+    <button class="nav-btn" data-view="completed"><span class="ico">📘</span> Standards <span class="count" id="c-completed">0</span></button>
+    <div class="nav-sep" id="adminSep"></div>
+    <button class="nav-btn" data-view="assign" id="assignNav"><span class="ico">✨</span> Assign Actionable</button>
+    <button class="nav-btn" data-view="settings" id="settingsNav"><span class="ico">🔔</span> Chat Alerts</button>
+    <div class="user-chip" style="cursor:pointer" onclick="openPicker()"><span class="avatar" id="meAvatar" style="background:#bbb">?</span><div><div class="nm" id="meName">WHO ARE YOU?</div><div class="rl" id="meRole">tap to choose</div></div><button class="sw" id="swBtn">PICK</button></div>
+  </aside>
+  <main class="main" id="main"><div class="spin">Loading…</div></main>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://qmjsfshhnwjtdmraatcv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtanNmc2hobndqdGRtcmFhdGN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwMDU1NTcsImV4cCI6MjA5ODU4MTU1N30.9DHNUDNrIUb6IMUREUnQ-QcvPJeMIWo8r0dgUki2sF4';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const AV_COLORS = ['#ff007f','#00b8e0','#e0a000','#b14bf4','#ff5100','#00c050','#2563EB','#DC2626'];
+let me = null, staff = [], acts = [], view = 'dash', openActId = null, pendingAction = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => (s??'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const initials = n => n.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+const color = n => AV_COLORS[[...n].reduce((a,c)=>a+c.charCodeAt(0),0) % AV_COLORS.length];
+const av = (n, sm) => `<span class="avatar${sm?' sm':''}" style="background:${color(n)}" title="${esc(n)}">${initials(n)}</span>`;
+const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '—';
+const ago = d => { const s=(Date.now()-new Date(d))/1e3; if(s<60)return'just now'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return fmtDate(d); };
+const fmtSize = b => !b?'':(b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB');
+const STATUS_LABEL = {pending:'PENDING', in_progress:'IN PROGRESS', submitted:'SUBMITTED!', completed:'DONE ✔'};
+const toast = m => { $('toast').textContent=m; $('toast').classList.add('show'); setTimeout(()=>$('toast').classList.remove('show'),2600); };
+
+/* ---------- data ---------- */
+async function loadStaff(){
+  const {data,error} = await db.from('staff').select('*').eq('active',true).order('created_at');
+  if(error){ $('staffBtns').innerHTML = `<p style="color:var(--pink)">Could not connect: ${esc(error.message)}</p>`; return error; }
+  staff = data;
+  $('staffBtns').innerHTML = staff.map(s =>
+    `<button class="staff-btn" onclick="pickUser('${s.id}')"><span class="shine"></span>${av(s.name)}<span>${esc(s.name)}<span class="role">${s.role==='admin'?'⚡ Admin':'Team member'}</span></span></button>`).join('');
+}
+async function loadActs(){
+  const {data,error} = await db.from('actionables')
+    .select('*, actionable_assignments(id, member_role, staff(id,name)), actionable_updates(id, kind, message, created_at, staff(name))')
+    .order('code');
+  if(error){ toast('Load failed: '+error.message); return; }
+  acts = data.map(a => { a.actionable_updates.sort((x,y)=>new Date(x.created_at)-new Date(y.created_at)); return a; });
+  updateCounts();
+}
+const mine = a => !!me && a.actionable_assignments.some(x => x.staff && x.staff.id === me.id);
+function updateCounts(){
+  $('c-my').textContent = me ? acts.filter(a => mine(a) && a.status!=='completed').length : '?';
+  $('c-team').textContent = acts.filter(a => a.status!=='completed').length;
+  $('c-pending').textContent = acts.filter(a => a.status==='pending'||a.status==='submitted').length;
+  $('c-completed').textContent = acts.filter(a => a.status==='completed').length;
+}
+
+/* ---------- identity ---------- */
+function openPicker(){ $('pickModal').style.display='flex'; }
+$('pickModal').onclick = e => { if(e.target.id==='pickModal') $('pickModal').style.display='none'; };
+function requireMe(fn){
+  if(me) return true;
+  pendingAction = fn; openPicker(); toast('Pick your name first!');
+  return false;
+}
+function pickUser(id){
+  me = staff.find(s=>s.id===id);
+  localStorage.setItem('fets_me', id);
+  $('pickModal').style.display='none';
+  $('meName').textContent = me.name; $('meRole').textContent = me.role==='admin'?'Admin':'Team member';
+  $('swBtn').textContent = 'SWITCH';
+  const chipAv = $('meAvatar');
+  chipAv.style.background = color(me.name); chipAv.textContent = initials(me.name);
+  const isAdmin = me.role==='admin';
+  $('assignNav').style.display = isAdmin?'flex':'none';
+  $('settingsNav').style.display = isAdmin?'flex':'none';
+  $('adminSep').style.display = isAdmin?'block':'none';
+  updateCounts();
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+  if(pendingAction){ const f=pendingAction; pendingAction=null; f(); }
+  else render();
+}
+function switchUser(){ openPicker(); }
+
+/* ---------- navigation ---------- */
+function go(v){
+  view=v; openActId=null;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+  render();
+}
+document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>go(b.dataset.view));
+
+/* ---------- list rendering ---------- */
+function cardHTML(a){
+  const people = a.actionable_assignments.filter(x=>x.staff);
+  const last = a.actionable_updates[a.actionable_updates.length-1];
+  return `<div class="act-card" onclick="openAct('${a.id}')">
+    <span class="code-badge">${esc(a.code)}</span>
+    <div class="body"><div class="title">${esc(a.title)}</div>
+      <div class="sub">${last?esc(last.staff?.name||'')+': '+esc(last.message):esc(a.description||'')}</div></div>
+    <div class="meta">
+      <span class="avatars">${people.map(p=>av(p.staff.name,true)).join('')}</span>
+      ${a.due_date?`<span style="font-size:13px;font-weight:400;color:#888">Due ${fmtDate(a.due_date)}</span>`:''}
+      <span class="pill ${a.status}">${STATUS_LABEL[a.status]}</span>
+    </div></div>`;
+}
+function listView(items, title, subtitle, emptyMsg, sections){
+  let body;
+  if(!items.length) body = `<div class="empty"><div class="big">🌤️</div><p>${emptyMsg}</p></div>`;
+  else if(sections){
+    body = sections.filter(s=>s.items.length).map(s=>`<div><span class="section-label">${s.label}</span></div><div class="card-list" style="margin-bottom:10px">${s.items.map(cardHTML).join('')}</div>`).join('');
+  } else body = `<div class="card-list">${items.map(cardHTML).join('')}</div>`;
+  return `<div class="page-head"><h1>${title}</h1><p>${subtitle}</p></div>${body}`;
+}
+
+function render(){
+  const m = $('main');
+  if(openActId) return renderDetail();
+  if(view==='dash'){
+    renderDash();
+  } else if(view==='my'){
+    if(!me){
+      m.innerHTML = `<div class="page-head"><h1>MY ACTIONABLES 🎯</h1></div>
+        <div class="empty"><div class="big">🤔</div><p>I don't know who you are yet!</p>
+        <button class="btn primary" style="margin-top:20px" onclick="openPicker()">PICK MY NAME!</button></div>`;
+      return;
+    }
+    const items = acts.filter(a=>mine(a) && a.status!=='completed');
+    m.innerHTML = listView(items,'MY ACTIONABLES 🎯',`Everything on your plate, ${me.name.split(' ')[0]}. Open one to add updates, data or files.`,'Nothing on your plate right now. Enjoy it!');
+  } else if(view==='team'){
+    const items = acts.filter(a=>a.status!=='completed');
+    m.innerHTML = listView(items,'TEAM ACTIONABLES 👥','Every live actionable across the whole FETS team.','No live actionables. Create one from Assign Actionable!');
+  } else if(view==='pending'){
+    const p = acts.filter(a=>a.status==='pending'), s = acts.filter(a=>a.status==='submitted');
+    m.innerHTML = listView([...p,...s],'PENDING ⏳','Waiting to be started, or submitted and waiting for review.','Nothing pending — all clear!',[{label:'⏳ NOT STARTED YET',items:p},{label:'🔍 AWAITING REVIEW',items:s}]);
+  } else if(view==='completed'){
+    const items = acts.filter(a=>a.status==='completed');
+    m.innerHTML = listView(items,'STANDARDS 📘','The finished output — approved standards compiled centre by centre, ready to study, reuse, or roll out at Centre #3.','Approved actionables become standards and land here.');
+  } else if(view==='assign'){
+    renderAssign();
+  } else if(view==='settings'){
+    renderSettings();
+  }
+}
+
+/* ---------- team dashboard ---------- */
+function renderDash(){
+  const chip = a => `<div class="mini-act ${a.status==='completed'?'done':''}" onclick="openAct('${a.id}')">
+    <span class="mcode">${esc(a.code)}</span><span class="mtitle">${esc(a.title)}</span>
+    <span class="pill ${a.status}">${STATUS_LABEL[a.status]}</span></div>`;
+  const cards = staff.map(s=>{
+    const forMe = a => a.actionable_assignments.some(x=>x.staff && x.staff.id===s.id);
+    const assigned = acts.filter(a=>forMe(a) && a.status!=='completed');
+    const done = acts.filter(a=>forMe(a) && a.status==='completed');
+    return `<div class="staff-card">
+      <div class="sc-head">${av(s.name)}<div><div class="sc-name">${esc(s.name)}</div><div class="sc-role">${s.role==='admin'?'⚡ Admin':'Team member'}</div></div>
+        <span class="sc-count ${assigned.length?'':'zero'}">${assigned.length} ON IT</span></div>
+      ${assigned.length?`<div class="sc-label">📌 ASSIGNED</div>${assigned.map(chip).join('')}`:'<div class="sc-free">— nothing assigned right now —</div>'}
+      ${done.length?`<div class="sc-label done">✔ COMPLETED</div>${done.map(chip).join('')}`:''}
+    </div>`;
+  }).join('');
+  $('main').innerHTML = `<div class="page-head"><h1>TEAM DASHBOARD 🏠</h1>
+    <p>Standardising Cochin &amp; Calicut before Centre #3 opens 🚀 — bright cards are live work, green ticked ones are done and in the Library. Tap any actionable to open it.</p></div>
+    <div class="dash-grid">${cards}</div>`;
+}
+
+/* ---------- detail ---------- */
+function openAct(id){ openActId=id; render(); }
+function renderDetail(){
+  const a = acts.find(x=>x.id===openActId);
+  if(!a){ openActId=null; return render(); }
+  const isAdmin = !!me && me.role==='admin';
+  const people = a.actionable_assignments.filter(x=>x.staff);
+  const canManage = !!me && (mine(a) || isAdmin);   // edit rights: Midhun + task team only
+  const open = a.status!=='completed';
+
+  // point-wise purpose notes (one line = one point; fallback: split sentences)
+  let points = (a.description||'').split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  if(points.length<2 && points[0]) points = points[0].split(/(?<=\.)\s+/).map(s=>s.trim()).filter(Boolean);
+
+  const steps = a.actionable_updates.filter(u=>u.kind==='instruction');
+  const log = a.actionable_updates.filter(u=>u.kind!=='instruction');
+
+  if(!open) return renderStandardDoc(a, points, people);
+
+  let btns = '';
+  if(open){
+    if(canManage && a.status==='pending') btns += `<button class="btn primary" onclick="setStatus('${a.id}','in_progress','started work')">▶ START WORK!</button>`;
+    if(canManage && a.status==='in_progress') btns += `<button class="btn primary" onclick="submitAct('${a.id}')">📤 SUBMIT AS FINISHED</button>`;
+    if(isAdmin && a.status==='submitted'){
+      btns += `<button class="btn green" onclick="approveAct('${a.id}')">✔ APPROVE → LIBRARY</button>`;
+      btns += `<button class="btn" onclick="setStatus('${a.id}','in_progress','sent it back for more work')">↩ SEND BACK</button>`;
+    }
+  }
+
+  const stepsHTML = steps.length ? steps.map((u,i)=>`
+    <div class="step"><span class="step-no">${i+1}</span>
+      <div class="step-body"><div class="msg">${esc(u.message)}</div>
+        <div class="step-meta">${esc(u.staff?.name||'')} · ${ago(u.created_at)}</div></div></div>`).join('')
+    : `<p class="soft">No steps yet.${isAdmin?' Break this task into steps below 👇':''}</p>`;
+
+  const logHTML = log.map(u=>`
+    <div class="feed-item ${u.kind==='submission'?'submission':''}">${av(u.staff?.name||'?',true)}
+      <div class="bubble"><div class="who">${esc(u.staff?.name||'Unknown')}
+        ${u.kind==='submission'?'<span class="tag">📤 SUBMITTED</span>':''}
+        <span class="when">${ago(u.created_at)}</span></div>
+        <div class="msg">${esc(u.message)}</div></div></div>`).join('')
+    || '<p class="soft">Nothing logged yet. Be the first!</p>';
+
+  $('main').innerHTML = `
+    <button class="back" onclick="openActId=null;render()">← BACK</button>
+
+    <div class="head-card">
+      <div class="head-row">
+        <span class="code-badge" style="font-size:20px;padding:11px 18px">${esc(a.code)}</span>
+        <h1>${esc(a.title)}</h1>
+        <span class="pill ${a.status}">${STATUS_LABEL[a.status]}</span>
+        ${btns}
+      </div>
+      <div class="head-grid">
+        <div>
+          <div class="mini-head">🎯 WHAT'S THIS FOR?</div>
+          <ul class="points">${points.map(p=>`<li>${esc(p)}</li>`).join('')||'<li class="soft">No description yet.</li>'}</ul>
+        </div>
+        <div>
+          <div class="mini-head">👥 TEAM ON IT</div>
+          <div class="team-chips">
+            ${people.map(p=>`<span class="team-chip">${av(p.staff.name,true)}${esc(p.staff.name)}${p.member_role==='lead'?'<span class="lead-tag">LEAD</span>':''}</span>`).join('')||'<span class="soft">Nobody assigned yet.</span>'}
+            ${isAdmin&&open?`<select id="addMemberSel" style="width:auto;padding:6px 10px;font-size:13px">${staff.filter(s=>!people.some(p=>p.staff.id===s.id)).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select>
+            <button class="btn sm" onclick="addMember('${a.id}')">＋ ADD</button>`:''}
+          </div>
+          <div class="facts">
+            <span class="fact">📅 Created ${fmtDate(a.created_at)}</span>
+            <span class="fact">⏰ Due ${fmtDate(a.due_date)}</span>
+            ${a.completed_at?`<span class="fact">✔ Done ${fmtDate(a.completed_at)}</span>`:''}
+            <span class="fact">💬 ${a.actionable_updates.length} posts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel"><h3>📌 INSTRUCTIONS — STEP BY STEP</h3>
+      <div class="steps-list">${stepsHTML}</div>
+      ${isAdmin&&open?`<div class="composer">
+        <textarea id="stepBox" placeholder="Write the next step of the procedure…"></textarea>
+        <button class="btn primary sm" style="align-self:flex-start" onclick="postUpdate('${a.id}','instruction','stepBox')">＋ ADD STEP</button></div>`:''}
+    </div>
+
+    <div class="panel" style="margin-top:26px"><h3>🔨 WORK LOG</h3>
+      <div class="feed" id="feed">${logHTML}</div>
+      ${open?`<div class="composer">
+        <textarea id="msgBox" placeholder="What did you work on? What's blocking you?"></textarea>
+        <button class="btn primary sm" style="align-self:flex-start" onclick="postUpdate('${a.id}','update','msgBox')">POST!</button></div>`:''}
+    </div>
+
+    <div class="detail-grid" style="margin-top:26px;grid-template-columns:1.2fr 1fr">
+      <div class="panel" style="margin-top:0"><h3>🗂️ COLLECTED DATA</h3>
+        <div class="data-list" id="dataList"><p class="soft">Loading…</p></div>
+        ${canManage?`<div class="inline-add" style="flex-direction:column;gap:8px">
+          <input id="dLabel" placeholder="Label — e.g. Calicut Centre · Internet (Asianet)">
+          <textarea id="dContent" style="height:64px;border-radius:14px" placeholder="Details — account no, provider, monthly amount, due date…"></textarea>
+          <button class="btn sm" style="align-self:flex-start" onclick="addData('${a.id}')">＋ ADD ENTRY</button></div>`:''}
+      </div>
+      <div class="panel" style="margin-top:0"><h3>📎 FILES</h3>
+        <div id="fileList"><p class="soft">Loading…</p></div>
+        ${canManage?`<div class="inline-add">
+          <input type="file" id="fileInp" style="padding:9px 12px">
+          <button class="btn pink sm" id="upBtn" onclick="uploadFile('${a.id}')">⬆ UPLOAD</button></div>
+          <p class="hint">Excel sheets, PDFs, photos of bills — anything up to 50 MB.</p>`:''}
+      </div>
+    </div>`;
+  const f=$('feed'); if(f) f.scrollTop=f.scrollHeight;
+  loadData(a.id); loadFiles(a.id);
+}
+
+/* ---------- standards document (completed actionables) ---------- */
+function renderStandardDoc(a, points, people){
+  $('main').innerHTML = `
+    <button class="back" onclick="openActId=null;render()">← BACK</button>
+    <div class="head-card">
+      <div class="head-row">
+        <span class="code-badge" style="font-size:20px;padding:11px 18px">${esc(a.code)}</span>
+        <h1>${esc(a.title)}</h1>
+        <span class="doc-stamp">✔ APPROVED STANDARD</span>
+        <button class="btn sm" onclick="window.print()">🖨️ PRINT / PDF</button>
+      </div>
+      <div class="head-grid">
+        <div>
+          <div class="mini-head">🎯 PURPOSE</div>
+          <ul class="points">${points.map(p=>`<li>${esc(p)}</li>`).join('')||'<li class="soft">—</li>'}</ul>
+        </div>
+        <div>
+          <div class="mini-head">👥 PREPARED BY</div>
+          <div class="team-chips">${people.map(p=>`<span class="team-chip">${av(p.staff.name,true)}${esc(p.staff.name)}${p.member_role==='lead'?'<span class="lead-tag">LEAD</span>':''}</span>`).join('')||'<span class="soft">—</span>'}</div>
+          <div class="facts">
+            <span class="fact">📅 Started ${fmtDate(a.created_at)}</span>
+            <span class="fact">✔ Approved ${fmtDate(a.completed_at)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel"><h3>📘 THE STANDARD — CENTRE BY CENTRE</h3>
+      <div class="std-table-wrap" id="matrixWrap"><p class="soft">Compiling…</p></div>
+    </div>
+    <div class="panel" style="margin-top:26px"><h3>📎 REFERENCE FILES</h3>
+      <div id="fileList"><p class="soft">Loading…</p></div>
+    </div>
+    <details class="history"><summary>📜 WORK HISTORY</summary>
+      <div class="inner panel"><div class="feed">${a.actionable_updates.map(u=>`
+        <div class="feed-item">${av(u.staff?.name||'?',true)}
+          <div class="bubble"><div class="who">${esc(u.staff?.name||'')}<span class="when">${ago(u.created_at)}</span></div>
+          <div class="msg">${esc(u.message)}</div></div></div>`).join('')||'<p class="soft">No history.</p>'}
+      </div></div>
+    </details>`;
+  loadMatrix(a.id); loadFiles(a.id);
+}
+async function loadMatrix(actId){
+  const {data} = await db.from('actionable_data').select('*').eq('actionable_id',actId).order('created_at');
+  const el=$('matrixWrap'); if(!el) return;
+  if(!data || !data.length){ el.innerHTML='<p class="soft">No collected data to compile into a standard.</p>'; return; }
+  // Labels like "Cochin Centre · Internet — Airtel" become column = "Cochin Centre", row = "Internet — Airtel"
+  const cols=[], items={}, order=[];
+  data.forEach(d=>{
+    const parts = d.label.split('·').map(s=>s.trim()).filter(Boolean);
+    const col = parts.length>1 ? parts[0] : 'Details';
+    const item = parts.length>1 ? parts.slice(1).join(' · ') : parts[0];
+    if(!cols.includes(col)) cols.push(col);
+    if(!items[item]){ items[item]={}; order.push(item); }
+    const t = typeof d.content==='object' ? (d.content.text ?? JSON.stringify(d.content)) : d.content;
+    items[item][col] = (items[item][col] ? items[item][col]+'\n' : '') + t;
+  });
+  el.innerHTML = `<table class="std-table">
+    <thead><tr><th>ITEM</th>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead>
+    <tbody>${order.map(it=>`<tr><td>${esc(it)}</td>${cols.map(c=>`<td>${esc(items[it][c]||'—')}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+}
+
+let dataRows = [], fileRows = [];
+const canManageAct = actId => {
+  const a = acts.find(x=>x.id===actId);
+  return !!me && !!a && (mine(a) || me.role==='admin');
+};
+const dTxt = d => typeof d.content==='object' ? (d.content.text ?? JSON.stringify(d.content)) : d.content;
+
+function dataRowHTML(d, canManage){
+  return `<div class="data-row" id="dr-${d.id}">
+    <div class="dr-top"><div class="lbl">${esc(d.label)}</div>
+      ${canManage?`<span class="row-tools"><button class="tool" title="Edit" onclick="editData('${d.id}')">✏️</button><button class="tool" title="Delete" onclick="delData('${d.id}')">🗑️</button></span>`:''}</div>
+    <div class="val">${esc(dTxt(d))}</div>
+    <div class="byline">${esc(d.staff?.name||'')} · ${fmtDate(d.created_at)}${d.updated_at && d.updated_at!==d.created_at?' · ✏️ edited':''}</div></div>`;
+}
+async function loadData(actId){
+  const {data} = await db.from('actionable_data').select('*, staff(name)').eq('actionable_id',actId).order('created_at');
+  const el=$('dataList'); if(!el) return;
+  dataRows = data||[];
+  const cm = canManageAct(actId);
+  el.innerHTML = dataRows.length ? dataRows.map(d=>dataRowHTML(d,cm)).join('')
+    : '<p class="soft">No data entries yet. The assigned team adds collected information here.</p>';
+}
+function editData(id){
+  const d=dataRows.find(x=>x.id===id); const row=$('dr-'+id); if(!d||!row) return;
+  row.innerHTML = `<input id="el-${id}" value="${esc(d.label)}">
+    <textarea id="ec-${id}" style="height:120px;margin-top:8px;border-radius:14px">${esc(dTxt(d))}</textarea>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn primary sm" onclick="saveData('${id}')">💾 SAVE</button>
+      <button class="btn sm" onclick="loadData('${d.actionable_id}')">CANCEL</button></div>`;
+}
+async function saveData(id){
+  const d=dataRows.find(x=>x.id===id);
+  const l=$('el-'+id).value.trim(), c=$('ec-'+id).value.trim();
+  if(!l||!c) return toast('Fill both label and details');
+  const {error}=await db.from('actionable_data').update({label:l, content:{text:c}, updated_at:new Date().toISOString()}).eq('id',id);
+  if(error) return toast('Failed: '+error.message);
+  loadData(d.actionable_id); toast('💾 Entry updated!');
+}
+async function delData(id){
+  const d=dataRows.find(x=>x.id===id);
+  if(!confirm(`Delete data entry "${d.label}"? This cannot be undone.`)) return;
+  const {error}=await db.from('actionable_data').delete().eq('id',id);
+  if(error) return toast('Failed: '+error.message);
+  loadData(d.actionable_id); toast('🗑️ Entry deleted');
+}
+async function loadFiles(actId){
+  const {data} = await db.from('actionable_files').select('*, staff(name)').eq('actionable_id',actId).order('created_at');
+  const el=$('fileList'); if(!el) return;
+  fileRows = data||[];
+  const cm = canManageAct(actId);
+  el.innerHTML = fileRows.length ? fileRows.map(f=>{
+    const url = db.storage.from('attachments').getPublicUrl(f.storage_path).data.publicUrl;
+    const ico = /\.(png|jpe?g|gif|webp)$/i.test(f.file_name)?'🖼️':/\.(xlsx?|csv)$/i.test(f.file_name)?'📊':/\.pdf$/i.test(f.file_name)?'📕':'📄';
+    return `<div class="file-row" style="cursor:default"><span class="fico">${ico}</span>
+      <span class="fname">${esc(f.file_name)}<div class="fmeta">${esc(f.staff?.name||'')} · ${fmtDate(f.created_at)} · ${fmtSize(f.size_bytes)}</div></span>
+      <a class="dl" href="${url}" target="_blank" rel="noopener">OPEN ↗</a>
+      ${cm?`<button class="tool" title="Delete" onclick="delFile('${f.id}')">🗑️</button>`:''}</div>`;
+  }).join('') : '<p class="soft" style="margin-bottom:6px">No files yet. Attach bills, sheets or photos.</p>';
+}
+async function delFile(id){
+  const f=fileRows.find(x=>x.id===id);
+  if(!confirm(`Delete file "${f.file_name}"? This cannot be undone.`)) return;
+  await db.storage.from('attachments').remove([f.storage_path]);
+  const {error}=await db.from('actionable_files').delete().eq('id',id);
+  if(error) return toast('Failed: '+error.message);
+  loadFiles(f.actionable_id); toast('🗑️ File deleted');
+}
+
+/* ---------- actions ---------- */
+async function postUpdate(actId, kind, boxId='msgBox'){
+  if(!requireMe(()=>postUpdate(actId,kind,boxId))) return;
+  const box=$(boxId); const msg=box.value.trim(); if(!msg) return;
+  const {error} = await db.from('actionable_updates').insert({actionable_id:actId, staff_id:me.id, kind, message:msg});
+  if(error) return toast('Failed: '+error.message);
+  box.value=''; await loadActs(); render(); toast(kind==='instruction'?'📌 Step added!':'🔨 Logged!');
+}
+async function addData(actId){
+  const l=$('dLabel').value.trim(), c=$('dContent').value.trim(); if(!l||!c) return toast('Fill both label and details');
+  const {error} = await db.from('actionable_data').insert({actionable_id:actId, staff_id:me.id, label:l, content:{text:c}});
+  if(error) return toast('Failed: '+error.message);
+  $('dLabel').value=''; $('dContent').value=''; loadData(actId); toast('🗂️ Data entry added!');
+}
+async function uploadFile(actId){
+  const inp=$('fileInp'); const f=inp.files[0]; if(!f) return toast('Choose a file first');
+  if(f.size > 50*1048576) return toast('Max 50 MB per file');
+  $('upBtn').disabled=true; $('upBtn').textContent='UPLOADING…';
+  const path = actId + '/' + Date.now() + '_' + f.name.replace(/[^\w.\-]+/g,'_');
+  const {error} = await db.storage.from('attachments').upload(path, f);
+  if(error){ $('upBtn').disabled=false; $('upBtn').textContent='⬆ UPLOAD'; return toast('Upload failed: '+error.message); }
+  await db.from('actionable_files').insert({actionable_id:actId, staff_id:me.id, file_name:f.name, storage_path:path, size_bytes:f.size});
+  await db.from('actionable_updates').insert({actionable_id:actId, staff_id:me.id, kind:'update', message:'📎 Attached a file: '+f.name});
+  await loadActs(); render(); toast('📎 File attached!');
+}
+async function addMember(actId){
+  const sid=$('addMemberSel').value; if(!sid) return;
+  const {error} = await db.from('actionable_assignments').insert({actionable_id:actId, staff_id:sid, member_role:'member'});
+  if(error) return toast('Failed: '+error.message);
+  const s=staff.find(x=>x.id===sid);
+  await db.from('actionable_updates').insert({actionable_id:actId, staff_id:me.id, kind:'status_change', message:`${s.name} was added to this actionable.`});
+  await loadActs(); render(); toast('👥 '+s.name+' added!');
+}
+async function setStatus(actId, status, note){
+  const patch={status}; if(status==='completed') patch.completed_at=new Date().toISOString();
+  const {error} = await db.from('actionables').update(patch).eq('id',actId);
+  if(error) return toast('Failed: '+error.message);
+  await db.from('actionable_updates').insert({actionable_id:actId, staff_id:me.id, kind:'status_change', message:`${me.name} ${note}.`});
+  await loadActs(); render();
+}
+async function submitAct(actId){
+  const a=acts.find(x=>x.id===actId);
+  if(!confirm(`Submit ${a.code} as finished? It goes to Midhun for review.`)) return;
+  await db.from('actionables').update({status:'submitted'}).eq('id',actId);
+  await db.from('actionable_updates').insert({actionable_id:actId, staff_id:me.id, kind:'submission', message:`${me.name} submitted this actionable as finished.`});
+  await loadActs(); render(); toast('📤 Submitted for review!');
+}
+async function approveAct(actId){
+  await setStatus(actId,'completed','approved this actionable — published as a Standard');
+  toast('📘 Approved · published as a Standard!');
+}
+
+/* ---------- assign ---------- */
+function nextCode(){
+  const n = acts.map(a=>parseInt((a.code||'').replace(/\D/g,''),10)).filter(x=>!isNaN(x));
+  return 'ACT-' + String((n.length?Math.max(...n):0)+1).padStart(2,'0');
+}
+function renderAssign(){
+  $('main').innerHTML = `
+    <div class="page-head"><h1>ASSIGN A NEW ACTIONABLE ✨</h1><p>Create a task, give it a memorable code, and put the right people on it.</p></div>
+    <div class="form-card">
+      <div class="code-preview">🔖 ${nextCode()} <small>auto-assigned code</small></div>
+      <label>TITLE</label><input id="fTitle" placeholder="e.g. Vendor Contracts Register">
+      <label>WHAT'S THIS FOR? — POINT-WISE</label><textarea id="fDesc" style="height:110px;border-radius:16px" placeholder="2–3 short points, ONE PER LINE, e.g.:&#10;Track all vendor contracts for both centres.&#10;Covers AMC, housekeeping and security agencies.&#10;Phase 1: contact details and renewal dates."></textarea>
+      <label>DUE DATE (OPTIONAL)</label><input type="date" id="fDue">
+      <label>ASSIGN TEAM MEMBERS</label>
+      <div id="fStaff">${staff.map(s=>`
+        <div class="check-row" onclick="const c=this.querySelector('input[type=checkbox]');c.checked=!c.checked;this.classList.toggle('on',c.checked)">
+          <input type="checkbox" value="${s.id}" onclick="event.stopPropagation();this.closest('.check-row').classList.toggle('on',this.checked)">
+          ${av(s.name,true)} <span>${esc(s.name)}</span>
+          <label style="margin:0 0 0 auto;display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer" onclick="event.stopPropagation()"><input type="radio" name="lead" value="${s.id}" style="width:auto"> LEAD</label>
+        </div>`).join('')}</div>
+      <label>STEP 1 OF THE PROCEDURE (OPTIONAL)</label><textarea id="fInstr" style="height:70px;border-radius:16px" placeholder="The first step the team should follow — you can add more steps inside the actionable…"></textarea>
+      <div style="margin-top:30px;display:flex;gap:14px">
+        <button class="btn primary" onclick="createAct()">✨ CREATE & ASSIGN!</button>
+      </div>
+    </div>
+    <div style="margin-top:26px"><button class="btn sm" onclick="addStaffDlg()">＋ ADD STAFF MEMBER</button></div>`;
+}
+async function createAct(){
+  const title=$('fTitle').value.trim(); if(!title) return toast('Give it a title!');
+  const ids=[...document.querySelectorAll('#fStaff input[type=checkbox]:checked')].map(c=>c.value);
+  const lead=document.querySelector('#fStaff input[type=radio]:checked')?.value;
+  if(lead && !ids.includes(lead)) ids.push(lead);
+  const code=nextCode();
+  const {data,error}=await db.from('actionables').insert({code, title, description:$('fDesc').value.trim()||null, due_date:$('fDue').value||null, status:'pending', created_by:me.id}).select().single();
+  if(error) return toast('Failed: '+error.message);
+  if(ids.length) await db.from('actionable_assignments').insert(ids.map(sid=>({actionable_id:data.id, staff_id:sid, member_role:sid===lead?'lead':'member'})));
+  const names = ids.map(i=>staff.find(s=>s.id===i)?.name).filter(Boolean).join(', ');
+  await db.from('actionable_updates').insert({actionable_id:data.id, staff_id:me.id, kind:'status_change', message:`${me.name} created ${code} · ${title}${names?' and assigned it to '+names:''}.`});
+  const instr=$('fInstr').value.trim();
+  if(instr) await db.from('actionable_updates').insert({actionable_id:data.id, staff_id:me.id, kind:'instruction', message:instr});
+  await loadActs(); toast('🎉 '+code+' created!'); openActId=data.id; render();
+}
+async function addStaffDlg(){
+  const name=prompt('New staff member\'s full name:'); if(!name||!name.trim()) return;
+  const {error}=await db.from('staff').insert({name:name.trim(), role:'member'});
+  if(error) return toast('Failed: '+error.message);
+  const {data}=await db.from('staff').select('*').eq('active',true).order('created_at'); staff=data;
+  toast('👥 '+name.trim()+' added to the team!'); render();
+}
+
+/* ---------- settings (Google Chat) ---------- */
+async function renderSettings(){
+  $('main').innerHTML = `
+    <div class="page-head"><h1>GOOGLE CHAT ALERTS 🔔</h1><p>Connect a Google Chat space so every update, instruction and submission pings the team automatically.</p></div>
+    <div class="form-card">
+      <label>GOOGLE CHAT WEBHOOK URL</label>
+      <input id="whUrl" placeholder="https://chat.googleapis.com/v1/spaces/…/messages?key=…">
+      <p class="hint">Paste the incoming-webhook URL of your FETS Google Chat space. Leave empty to switch alerts off.</p>
+      <div style="margin-top:24px;display:flex;gap:14px;flex-wrap:wrap">
+        <button class="btn primary" onclick="saveWebhook()">💾 SAVE</button>
+        <button class="btn sm" onclick="testWebhook()" style="align-self:center">🔔 SEND TEST PING</button>
+      </div>
+      <div class="steps"><b>How to get the webhook URL (once, ~1 minute):</b><br>
+        1. Open <b>Google Chat</b> (workspace account) → open or create the space, e.g. “FETS Actionables”.<br>
+        2. Click the space name → <b>Apps &amp; integrations</b> → <b>Webhooks</b> → <b>Add webhook</b>.<br>
+        3. Name it “Actionables Bot”, save, and <b>copy the URL</b> it gives you.<br>
+        4. Paste it above and hit SAVE. Done — every post in any actionable now lands in that space.</div>
+    </div>`;
+  const {data} = await db.from('app_settings').select('value').eq('key','gchat_webhook').maybeSingle();
+  if(data && data.value) $('whUrl').value = data.value;
+}
+async function saveWebhook(){
+  const v=$('whUrl').value.trim();
+  const {error}=await db.from('app_settings').upsert({key:'gchat_webhook', value:v, updated_at:new Date().toISOString()});
+  if(error) return toast('Failed: '+error.message);
+  toast(v?'🔔 Chat alerts ON!':'🔕 Chat alerts off');
+}
+async function testWebhook(){
+  const first=acts[0]; if(!first) return toast('Create an actionable first');
+  await db.from('actionable_updates').insert({actionable_id:first.id, staff_id:me.id, kind:'status_change', message:'Test ping from FETS Actionables — Google Chat is connected! 🎉'});
+  await loadActs(); toast('Test sent — check your Chat space!');
+}
+
+/* ---------- boot ---------- */
+(async function(){
+  const err = await loadStaff();
+  if(err){
+    $('main').innerHTML = `<div class="page-head"><h1>ONE STEP LEFT! 🛠️</h1>
+      <p>This app is pointed at your Supabase project, but the database isn't set up yet.</p></div>
+      <div class="form-card"><div class="steps"><b>Do this once (2 minutes):</b><br>
+      1. Open <b>supabase.com</b> → your project → <b>SQL Editor</b>.<br>
+      2. Paste the entire contents of <b>setup_fets_actionables.sql</b> (came with this app).<br>
+      3. Hit <b>RUN</b>. It creates all tables, storage and pre-loads ACT-01 &amp; ACT-02.<br>
+      4. Refresh this page — the dashboard will light up. 🎉</div></div>`;
+    return;
+  }
+  await loadActs();
+  const saved=localStorage.getItem('fets_me');
+  if(saved && staff.some(s=>s.id===saved)) pickUser(saved);
+  else go('dash');
+})();
+</script>
+</body>
+</html>
