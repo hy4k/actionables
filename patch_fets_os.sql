@@ -68,6 +68,10 @@ create policy anon_all_centres on centres for all using (true) with check (true)
 create policy anon_all_centre_rollout on centre_rollout for all using (true) with check (true);
 create policy anon_all_compliance on compliance_items for all using (true) with check (true);
 
+-- the rollout board stays locked until this many approved standards exist
+insert into app_settings (key, value) values ('rollout_unlock_target','10')
+on conflict (key) do nothing;
+
 -- ---------- seed: the two live centres + Centre #3 ----------
 insert into centres (name, status, sort_order) values
   ('Cochin Centre', 'live', 1),
