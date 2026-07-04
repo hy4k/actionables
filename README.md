@@ -1,7 +1,7 @@
 # FETS Actionables ⚡
 
 Task & standardisation platform for FETS test centres (Cochin · Calicut · Centre #3 soon).
-Single-file web app, comic-doodle design, Supabase backend.
+Single-file responsive operations workspace with a Supabase backend.
 
 ## Files
 

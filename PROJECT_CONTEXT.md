@@ -61,15 +61,18 @@ Keep this convention or the comparison table breaks.
 - Flow: pending → START WORK → in_progress → SUBMIT AS FINISHED → submitted →
   Midhun APPROVE (→ Standard) or SEND BACK.
 
-## 4. Design language (do not drift from this)
+## 4. Design language (Actionables Studio v2)
 
-Comic doodle / pop-art, derived from a reference button Midhun supplied:
-- Colors: yellow `#ffea00`, pink `#ff007f`, cyan `#00d4ff`, orange `#ff5100`, ink `#111`,
-  paper `#FFFDF2` with dotted background.
-- Fonts: **Bangers** (headings/badges), **Comic Neue** (body). White-outline text shadows.
-- 3px solid ink borders, sketchy radii (`255px 15px 225px 15px / 15px 225px 15px 255px`),
-  layered hard shadows (pink → cyan → ink), wobble-on-hover buttons, ★ and ⚡ accents.
-- Midhun wants spacious, vibrant, unconventional layouts. He is highly design-sensitive.
+The original comic-doodle UI was upgraded into a spacious operations workspace in July 2026:
+- Core palette: navy `#17243a`, warm paper `#f4f4ee`, yellow `#ffd84d`, coral `#ff6b55`,
+  and teal `#20b7a2`. Playful FETS accents remain, but content surfaces are calm and structured.
+- Fonts: **Space Grotesk** for display hierarchy and **DM Sans** for interface/body copy.
+- Dashboard hierarchy: standards-readiness hero, live metrics, work-in-motion cards, approved
+  standards, and team ownership. Lists use progress, ownership, due date and search.
+- Desktop uses a dark fixed navigation rail. Mobile uses a sticky identity header and fixed
+  bottom navigation, with admin actions shown only to the admin identity.
+- Prefer generous whitespace, rounded 18–30px surfaces, fine borders and soft depth. Avoid
+  reverting to dense hard-shadow comic cards across the full interface.
 
 ## 5. Current state / seeded content
 
