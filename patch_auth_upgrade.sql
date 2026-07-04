@@ -25,7 +25,7 @@ alter table staff add column if not exists email text unique;
 alter table staff add column if not exists auth_user_id uuid unique references auth.users(id);
 
 -- ---------- B. set each staff member's login email (EDIT THESE) ----------
-update staff set email = 'midhunnr@gmail.com' where name = 'Midhun';
+update staff set email = 'mithun@fets.in' where name = 'Midhun';   -- applied to production 2026-07-04
 update staff set email = 'nimmy@fets.in'      where name = 'Nimmy M';   -- ← EDIT
 update staff set email = 'shimna@fets.in'     where name = 'Shimna';    -- ← EDIT
 
