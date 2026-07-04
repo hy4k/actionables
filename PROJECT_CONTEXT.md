@@ -21,6 +21,7 @@ reference document comparing centres side by side, applied to future centres.
   - URL: `https://qmjsfshhnwjtdmraatcv.supabase.co`
   - App uses the **anon key** (hardcoded in actionables.html).
   - `setup_fets_actionables.sql` = full one-time setup (schema, RLS, storage, trigger, seed data).
+  - `patch_fets_os.sql` = adds the FETS OS Centre Rollout tables (centres, centre_rollout) + seed centres.
   - `patch_delete_policy.sql` = for DBs created with the pre-delete-policy script version.
 - **A retired mirror** exists at project `sdaaynkobntgkqlqrjko` ("fets-actionables", Mumbai,
   in the Supabase account connected to the original Cowork session) — used for testing; not production.
@@ -35,6 +36,10 @@ reference document comparing centres side by side, applied to future centres.
 - `actionable_data` (label, content jsonb `{text: "..."}`) — the collected data entries
 - `actionable_files` (file_name, storage_path → public bucket `attachments`, size_bytes)
 - `app_settings` (key/value) — key `gchat_webhook` holds the Google Chat incoming-webhook URL
+- `centres` (name unique, status: live|launching|planned, sort_order, launched_at) — seeded:
+  Cochin Centre (live), Calicut Centre (live), Centre #3 (launching). Requires `patch_fets_os.sql`.
+- `centre_rollout` (centre↔actionable unique pair, status: not_started|in_progress|done|na,
+  note, updated_by) — one row per approved Standard per not-yet-live centre
 - Trigger `trg_notify_gchat` (pg_net): every insert into actionable_updates POSTs to the
   Google Chat webhook if set. Never blocks on failure.
 
@@ -60,6 +65,15 @@ Keep this convention or the comparison table breaks.
 - Codes auto-generate: ACT-01, ACT-02, … (max existing number + 1).
 - Flow: pending → START WORK → in_progress → SUBMIT AS FINISHED → submitted →
   Midhun APPROVE (→ Standard) or SEND BACK.
+- **FETS OS · Centre Rollout (nav "Centre Rollout 🚀"):** the app's end-game. Every approved
+  Standard automatically becomes a launch-checklist row for each not-yet-live centre
+  (client-side sync inserts missing `centre_rollout` rows when the view opens). Anyone can
+  cycle an item's status (not started → in progress → done → n/a) and add a note; marking
+  "done" also posts to that standard's Work Log (so Google Chat pings). Per-centre progress
+  bar; at 100% the admin gets 🎉 MARK LIVE (sets centre live + launched_at). Admin can
+  ＋ ADD CENTRE (planned) and ▶ START LAUNCH (planned → launching). Dashboard shows a
+  "Centre rollout" strip with per-centre progress while any centre is launching/planned.
+  If the tables are missing the view shows a run-patch_fets_os.sql setup card instead.
 
 ## 4. Design language (do not drift from this)
 

@@ -513,6 +513,28 @@ label{font-family:'Bangers',cursive;font-size:14.5px;font-weight:400;letter-spac
 .ai-verify b{font-family:'Bangers';font-weight:400;letter-spacing:.06em;color:#c22}
 .ai-verify ul{margin:8px 0 0 20px}
 .ai-verify li{font-weight:400;font-size:13.5px;padding:2px 0}
+
+/* --- FETS OS · centre rollout --- */
+.live-strip{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:30px}
+.live-centre{display:inline-flex;align-items:center;gap:10px;background:#fff;border:2px solid var(--pop-ink);border-radius:14px;padding:9px 18px;box-shadow:3px 3px 0 var(--pop-green);font-family:'Bangers',cursive;font-size:17px;letter-spacing:.05em}
+.live-centre .dot{width:9px;height:9px;border-radius:50%;background:var(--pop-green);box-shadow:0 0 0 4px rgba(51,209,122,.16)}
+.live-centre small{font-family:'Comic Neue',cursive;font-size:11px;font-weight:700;color:#888;letter-spacing:0}
+.rollout-card{background:#fff;border:2px solid var(--pop-ink);border-radius:22px;padding:28px 32px;box-shadow:6px 6px 0 var(--pop-cyan);margin-bottom:30px}
+.rollout-card:nth-of-type(even){box-shadow:6px 6px 0 var(--pop-violet)}
+.ro-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ro-head h2{font-family:'Bangers',cursive;font-size:30px;letter-spacing:.03em;flex:1;min-width:180px}
+.ro-progress{margin-top:18px}
+.ro-progress .progress-line{height:9px;margin-top:0}
+.ro-list{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+.ro-item{display:flex;align-items:center;gap:12px;border:1.5px solid var(--studio-line);border-radius:13px;background:#f8f9f6;padding:10px 14px;flex-wrap:wrap}
+.ro-item .mcode{font-family:'Bangers',cursive;font-size:13px;letter-spacing:.06em;background:var(--pop-ink);color:var(--pop-yellow);border-radius:8px;padding:2px 9px;flex-shrink:0;cursor:pointer}
+.ro-item .ro-title{font-size:14px;flex:1;min-width:140px;cursor:pointer}
+.ro-item .ro-title:hover{text-decoration:underline wavy var(--pop-pink)}
+.ro-item .pill{cursor:pointer;user-select:none}
+.ro-item .ro-note{width:100%;font-size:12.5px;font-weight:400;color:#777;padding-left:2px}
+.pill.not_started{background:#efefe6;color:#777}
+.pill.na{background:#fff;color:#999;border-style:dashed}
+.ro-empty{font-size:14px;font-weight:400;color:#888;background:var(--paper);border:2px dashed var(--studio-line);border-radius:14px;padding:16px 20px;margin-top:18px}
 </style>
 </head>
 <body>
@@ -541,6 +563,7 @@ label{font-family:'Bangers',cursive;font-size:14.5px;font-weight:400;letter-spac
     <button class="nav-btn app-nav" data-view="team"><span class="ico">👥</span> Team Actionables <span class="count" id="c-team">0</span></button>
     <button class="nav-btn app-nav" data-view="pending"><span class="ico">⏳</span> Pending Actionables <span class="count" id="c-pending">0</span></button>
     <button class="nav-btn app-nav" data-view="completed"><span class="ico">📘</span> Completed Actionables <span class="count" id="c-completed">0</span></button>
+    <button class="nav-btn app-nav" data-view="rollout"><span class="ico">🚀</span> Centre Rollout <span class="count" id="c-rollout">0</span></button>
     <div class="nav-label admin" id="adminSep">ADMIN ZONE</div>
     <button class="nav-btn app-nav" data-view="assign" id="assignNav"><span class="ico">✨</span> Assign Actionable</button>
     <button class="nav-btn app-nav" data-view="settings" id="settingsNav"><span class="ico">🔔</span> Chat Alerts</button>
@@ -553,6 +576,7 @@ label{font-family:'Bangers',cursive;font-size:14.5px;font-weight:400;letter-spac
     <button class="mobile-nav-btn app-nav" data-view="team"><span class="ico">👥</span>Team</button>
     <button class="mobile-nav-btn app-nav" data-view="pending"><span class="ico">⏳</span>Pending</button>
     <button class="mobile-nav-btn app-nav" data-view="completed"><span class="ico">📘</span>Library</button>
+    <button class="mobile-nav-btn app-nav" data-view="rollout"><span class="ico">🚀</span>Rollout</button>
     <button class="mobile-nav-btn app-nav admin-only" data-view="assign" id="mobileAssignNav"><span class="ico">✨</span>Assign</button>
   </nav>
 </div></div>
@@ -566,6 +590,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const AV_COLORS = ['#ff007f','#00b8e0','#e0a000','#b14bf4','#ff5100','#00c050','#2563EB','#DC2626'];
 let me = null, staff = [], acts = [], view = 'dash', openActId = null, pendingAction = null;
+let centres = null, rollout = [];   // null centres = rollout tables not set up yet
 
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -600,6 +625,45 @@ function updateCounts(){
   $('c-team').textContent = acts.filter(a => a.status!=='completed').length;
   $('c-pending').textContent = acts.filter(a => a.status==='pending'||a.status==='submitted').length;
   $('c-completed').textContent = acts.filter(a => a.status==='completed').length;
+  $('c-rollout').textContent = rolloutRemaining();
+}
+
+/* ---------- FETS OS · centre rollout data ---------- */
+async function loadRollout(){
+  const c = await db.from('centres').select('*').order('sort_order').order('name');
+  if(c.error){ centres = null; rollout = []; return; }
+  centres = c.data;
+  const r = await db.from('centre_rollout').select('*, staff:updated_by(name)');
+  rollout = r.data || [];
+}
+function rolloutRemaining(){
+  if(!centres) return 0;
+  const stds = acts.filter(a=>a.status==='completed');
+  let n = 0;
+  centres.filter(c=>c.status!=='live').forEach(c=>{
+    stds.forEach(a=>{
+      const r = rollout.find(x=>x.centre_id===c.id && x.actionable_id===a.id);
+      if(!r || (r.status!=='done' && r.status!=='na')) n++;
+    });
+  });
+  return n;
+}
+// every approved Standard becomes a checklist row for each not-yet-live centre
+async function syncRollout(){
+  if(!centres) return;
+  const stds = acts.filter(a=>a.status==='completed');
+  const missing = [];
+  centres.filter(c=>c.status!=='live').forEach(c=>{
+    stds.forEach(a=>{
+      if(!rollout.some(r=>r.centre_id===c.id && r.actionable_id===a.id))
+        missing.push({centre_id:c.id, actionable_id:a.id});
+    });
+  });
+  if(!missing.length) return;
+  const {error} = await db.from('centre_rollout').insert(missing);
+  if(error) return;
+  await loadRollout(); updateCounts();
+  if(view==='rollout' && !openActId) render();
 }
 
 /* ---------- identity ---------- */
@@ -707,6 +771,8 @@ function render(){
   } else if(view==='completed'){
     const items = acts.filter(a=>a.status==='completed');
     m.innerHTML = listView(items,'STANDARDS 📘','The finished output — approved standards compiled centre by centre, ready to study, reuse, or roll out at Centre #3.','Approved actionables become standards and land here.');
+  } else if(view==='rollout'){
+    renderRollout();
   } else if(view==='assign'){
     renderAssign();
   } else if(view==='settings'){
@@ -744,7 +810,123 @@ function renderDash(){
     <section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">Work in motion</span><h2>Actionables to move next</h2></div><button onclick="go('team')">See all team work →</button></div>
       ${live.length?`<div class="dashboard-action-grid">${live.slice(0,6).map(cardHTML).join('')}</div>`:`<div class="empty"><div class="big">✓</div><p>Every live actionable is cleared. Assign the next standardisation task when ready.</p>${me&&me.role==='admin'?`<button class="studio-button" style="margin-top:18px" onclick="go('assign')">Create the next actionable</button>`:''}</div>`}</section>
     ${completed.length?`<section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">Recently approved</span><h2>Reusable standards</h2></div><button onclick="go('completed')">Browse library →</button></div><div class="dashboard-action-grid">${completed.slice(0,3).map(cardHTML).join('')}</div></section>`:''}
+    ${rolloutDashHTML(completed)}
     <section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">Team overview</span><h2>Ownership at a glance</h2></div></div><div class="team-strip">${teamCards}</div></section>`;
+}
+// FETS OS strip on the dashboard: launch progress per upcoming centre
+function rolloutDashHTML(completed){
+  const launching = (centres||[]).filter(c=>c.status!=='live');
+  if(!launching.length || !completed.length) return '';
+  return `<section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">FETS OS</span><h2>Centre rollout</h2></div><button onclick="go('rollout')">Open rollout board →</button></div>
+    <div class="team-strip">${launching.map(c=>{
+      const cleared = completed.filter(a=>{
+        const r = rollout.find(x=>x.centre_id===c.id && x.actionable_id===a.id);
+        return r && (r.status==='done'||r.status==='na');
+      }).length;
+      const pct = Math.round(cleared/completed.length*100);
+      return `<div class="team-load-card" style="cursor:pointer" onclick="go('rollout')">
+        <div class="team-person"><span class="avatar" style="background:var(--pop-ink)">🚀</span><div><strong>${esc(c.name)}</strong><small>${c.status==='launching'?'Launch in progress':'Planned'}</small></div></div>
+        <div class="progress-line" style="margin-top:14px"><span style="width:${pct}%"></span></div>
+        <div class="progress-caption"><span>${cleared} of ${completed.length} standards</span><b>${pct}%</b></div></div>`;
+    }).join('')}</div></section>`;
+}
+
+/* ---------- FETS OS · centre rollout view ---------- */
+const RO_LABEL = {not_started:'NOT STARTED', in_progress:'IN PROGRESS', done:'DONE ✔', na:'N/A'};
+const RO_NEXT  = {not_started:'in_progress', in_progress:'done', done:'na', na:'not_started'};
+const roPill = st => st==='done' ? 'completed' : st;
+function renderRollout(){
+  const m = $('main');
+  if(!centres){
+    m.innerHTML = `<div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>CENTRE ROLLOUT 🚀</h1>
+      <p>Every approved standard becomes a launch checklist for each new centre — but the rollout tables aren't set up yet.</p></div></div>
+      <div class="form-card"><div class="steps"><b>One-time setup (1 minute):</b><br>
+      1. Open <b>supabase.com</b> → your project → <b>SQL Editor</b>.<br>
+      2. Paste the entire contents of <b>patch_fets_os.sql</b> (came with this app).<br>
+      3. Hit <b>RUN</b>, then refresh this page — the rollout board lights up. 🎉</div></div>`;
+    return;
+  }
+  const stds = acts.filter(a=>a.status==='completed');
+  const liveC = centres.filter(c=>c.status==='live');
+  const newC = centres.filter(c=>c.status!=='live');
+  const isAdmin = !!me && me.role==='admin';
+  const liveStrip = liveC.length ? `<div class="live-strip">${liveC.map(c=>
+    `<span class="live-centre"><span class="dot"></span>${esc(c.name)}<small>LIVE${c.launched_at?' · since '+fmtDate(c.launched_at):''}</small></span>`).join('')}</div>` : '';
+  const cards = newC.map(c=>{
+    const items = stds.map(a=>({a, r: rollout.find(x=>x.centre_id===c.id && x.actionable_id===a.id)}));
+    const cleared = items.filter(x=>x.r && (x.r.status==='done'||x.r.status==='na')).length;
+    const pct = items.length ? Math.round(cleared/items.length*100) : 0;
+    const rows = items.map(({a,r})=>{
+      const st = r ? r.status : 'not_started';
+      return `<div class="ro-item">
+        <span class="mcode" onclick="openAct('${a.id}')">${esc(a.code)}</span>
+        <span class="ro-title" onclick="openAct('${a.id}')">${esc(a.title)}</span>
+        ${r?`<button class="tool" title="Add a note" onclick="editRoNote('${r.id}')">📝</button>`:''}
+        <span class="pill ${roPill(st)}" title="Click to change status" ${r?`onclick="cycleRollout('${r.id}')"`:''}>${RO_LABEL[st]}</span>
+        ${r&&r.note?`<div class="ro-note">📝 ${esc(r.note)}${r.staff?.name?' · '+esc(r.staff.name):''}</div>`:''}
+      </div>`;
+    }).join('');
+    return `<div class="rollout-card">
+      <div class="ro-head"><h2>🚀 ${esc(c.name)}</h2>
+        <span class="pill ${c.status==='launching'?'in_progress':'pending'}">${c.status==='launching'?'LAUNCHING':'PLANNED'}</span>
+        ${isAdmin&&c.status==='planned'?`<button class="btn sm" onclick="setCentreStatus('${c.id}','launching')">▶ START LAUNCH</button>`:''}
+        ${isAdmin&&items.length&&pct===100?`<button class="btn green sm" onclick="markCentreLive('${c.id}')">🎉 MARK LIVE</button>`:''}
+      </div>
+      <div class="ro-progress"><div class="progress-line"><span style="width:${pct}%"></span></div>
+        <div class="progress-caption"><span>${cleared} of ${items.length} standards in place</span><b>${pct}%</b></div></div>
+      ${items.length?`<div class="ro-list">${rows}</div>`
+        :`<div class="ro-empty">No approved standards yet. The moment an actionable is approved into the library it appears here automatically as a launch item for ${esc(c.name)}.</div>`}
+    </div>`;
+  }).join('') || `<div class="empty"><div class="big">🎉</div><p>Every centre is live! Add the next one when expansion begins.</p></div>`;
+  m.innerHTML = `<div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>CENTRE ROLLOUT 🚀</h1>
+    <p>Every approved standard automatically becomes a launch-checklist item for each new centre. When a centre's list turns green, it is ready to open.</p></div>
+    ${isAdmin?`<div class="list-tools"><button class="btn primary" onclick="addCentre()">＋ ADD CENTRE</button></div>`:''}</div>
+    ${liveStrip}${cards}`;
+  syncRollout();
+}
+async function cycleRollout(id){
+  if(!requireMe(()=>cycleRollout(id))) return;
+  const r = rollout.find(x=>x.id===id); if(!r) return;
+  const next = RO_NEXT[r.status] || 'in_progress';
+  const {error} = await db.from('centre_rollout').update({status:next, updated_by:me.id, updated_at:new Date().toISOString()}).eq('id',id);
+  if(error) return toast('Failed: '+error.message);
+  if(next==='done'){
+    const a = acts.find(x=>x.id===r.actionable_id), c = centres.find(x=>x.id===r.centre_id);
+    await db.from('actionable_updates').insert({actionable_id:r.actionable_id, staff_id:me.id, kind:'status_change',
+      message:`${me.name} marked standard ${a?a.code:''} as rolled out at ${c?c.name:'a new centre'} 🚀`});
+    await loadActs();
+  }
+  await loadRollout(); updateCounts(); render();
+}
+async function editRoNote(id){
+  if(!requireMe(()=>editRoNote(id))) return;
+  const r = rollout.find(x=>x.id===id); if(!r) return;
+  const note = prompt('Note for this launch item (leave empty to clear):', r.note||'');
+  if(note===null) return;
+  const {error} = await db.from('centre_rollout').update({note:note.trim()||null, updated_by:me.id, updated_at:new Date().toISOString()}).eq('id',id);
+  if(error) return toast('Failed: '+error.message);
+  await loadRollout(); render(); toast('📝 Note saved');
+}
+async function addCentre(){
+  if(!me || me.role!=='admin') return toast('Admin access only');
+  const name = prompt('New centre\'s name (e.g. "Trivandrum Centre"):'); if(!name||!name.trim()) return;
+  const {error} = await db.from('centres').insert({name:name.trim(), status:'planned', sort_order:(centres?.length||0)+1});
+  if(error) return toast('Failed: '+error.message);
+  await loadRollout(); updateCounts(); render(); toast('🏗️ '+name.trim()+' added to the rollout board!');
+}
+async function setCentreStatus(id, status){
+  if(!me || me.role!=='admin') return toast('Admin access only');
+  const {error} = await db.from('centres').update({status}).eq('id',id);
+  if(error) return toast('Failed: '+error.message);
+  await loadRollout(); render(); toast(status==='launching'?'🚀 Launch started!':'Updated');
+}
+async function markCentreLive(id){
+  if(!me || me.role!=='admin') return toast('Admin access only');
+  const c = centres.find(x=>x.id===id);
+  if(!confirm(`Mark ${c.name} as LIVE? Its launch checklist is complete.`)) return;
+  const {error} = await db.from('centres').update({status:'live', launched_at:new Date().toISOString().slice(0,10)}).eq('id',id);
+  if(error) return toast('Failed: '+error.message);
+  await loadRollout(); updateCounts(); render(); toast('🎉 '+c.name+' is LIVE!');
 }
 
 /* ---------- detail ---------- */
@@ -1209,6 +1391,7 @@ async function testWebhook(){
     return;
   }
   await loadActs();
+  await loadRollout(); updateCounts();
   const saved=localStorage.getItem('fets_me');
   if(saved && staff.some(s=>s.id===saved)) pickUser(saved);
   else go('dash');
