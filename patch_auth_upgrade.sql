@@ -73,6 +73,7 @@ drop policy if exists anon_all_files on actionable_files;
 drop policy if exists anon_all_settings on app_settings;
 drop policy if exists anon_all_centres on centres;
 drop policy if exists anon_all_centre_rollout on centre_rollout;
+drop policy if exists anon_all_compliance on compliance_items;
 
 -- ---------- E. real policies (signed-in users only) ----------
 -- staff: everyone signed in can see the team; only admin manages it
@@ -162,6 +163,15 @@ create policy auth_update_rollout on centre_rollout for update to authenticated
   using (true) with check (true);
 create policy admin_delete_rollout on centre_rollout for delete to authenticated
   using (is_admin());
+
+-- compliance calendar: read all; only admin creates/edits/deletes items
+-- (the auto-spawn engine only runs in the admin's browser on this build,
+--  because spawning also inserts actionables, which is admin-only above)
+drop policy if exists auth_read_compliance on compliance_items;
+drop policy if exists admin_write_compliance on compliance_items;
+create policy auth_read_compliance on compliance_items for select to authenticated using (true);
+create policy admin_write_compliance on compliance_items for all to authenticated
+  using (is_admin()) with check (is_admin());
 
 -- ---------- F. storage: attachments now need a login too ----------
 drop policy if exists anon_upload_attachments on storage.objects;

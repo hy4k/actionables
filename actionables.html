@@ -542,6 +542,13 @@ input:focus,textarea:focus,select:focus{border-color:var(--pop-cyan);box-shadow:
 .pill.not_started{background:#efefe6;color:#777}
 .pill.na{background:#fff;color:#999;border-style:dashed}
 .ro-empty{font-size:14px;font-weight:400;color:#888;background:var(--paper);border:2px dashed var(--studio-line);border-radius:14px;padding:16px 20px;margin-top:18px}
+
+/* --- FETS OS · compliance calendar --- */
+.pill.overdue{background:#ff3b3b;color:#fff;border-color:var(--pop-ink)}
+.pill.ok{background:#fff;color:#0a7a44;border-color:#0a8a44}
+.cat-chip{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#eef0ea;border:1px solid var(--studio-line);border-radius:99px;padding:3px 10px;color:#667;white-space:nowrap;flex-shrink:0}
+.comp-form{max-width:none;margin-bottom:30px}
+.comp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0 18px}
 </style>
 </head>
 <body>
@@ -578,6 +585,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--pop-cyan);box-shadow:
     <button class="nav-btn app-nav" data-view="pending"><span class="ico">⏳</span> Pending Actionables <span class="count" id="c-pending">0</span></button>
     <button class="nav-btn app-nav" data-view="completed"><span class="ico">📘</span> Completed Actionables <span class="count" id="c-completed">0</span></button>
     <button class="nav-btn app-nav" data-view="rollout"><span class="ico">🚀</span> Centre Rollout <span class="count" id="c-rollout">0</span></button>
+    <button class="nav-btn app-nav" data-view="compliance"><span class="ico">📅</span> Compliance <span class="count" id="c-comp">0</span></button>
     <div class="nav-label admin" id="adminSep">ADMIN ZONE</div>
     <button class="nav-btn app-nav" data-view="assign" id="assignNav"><span class="ico">✨</span> Assign Actionable</button>
     <button class="nav-btn app-nav" data-view="settings" id="settingsNav"><span class="ico">🔔</span> Chat Alerts</button>
@@ -591,6 +599,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--pop-cyan);box-shadow:
     <button class="mobile-nav-btn app-nav" data-view="pending"><span class="ico">⏳</span>Pending</button>
     <button class="mobile-nav-btn app-nav" data-view="completed"><span class="ico">📘</span>Library</button>
     <button class="mobile-nav-btn app-nav" data-view="rollout"><span class="ico">🚀</span>Rollout</button>
+    <button class="mobile-nav-btn app-nav" data-view="compliance"><span class="ico">📅</span>Renewals</button>
     <button class="mobile-nav-btn app-nav admin-only" data-view="assign" id="mobileAssignNav"><span class="ico">✨</span>Assign</button>
   </nav>
 </div></div>
@@ -605,6 +614,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const AV_COLORS = ['#ff007f','#00b8e0','#e0a000','#b14bf4','#ff5100','#00c050','#2563EB','#DC2626'];
 let me = null, staff = [], acts = [], view = 'dash', openActId = null;
 let centres = null, rollout = [];   // null centres = rollout tables not set up yet
+let compliance = null, compForm = null;   // null compliance = table not set up yet
 
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -638,6 +648,7 @@ function updateCounts(){
   $('c-pending').textContent = acts.filter(a => a.status==='pending'||a.status==='submitted').length;
   $('c-completed').textContent = acts.filter(a => a.status==='completed').length;
   $('c-rollout').textContent = rolloutRemaining();
+  $('c-comp').textContent = complianceDue();
 }
 
 /* ---------- FETS OS · centre rollout data ---------- */
@@ -648,9 +659,14 @@ async function loadRollout(){
   const r = await db.from('centre_rollout').select('*, staff:updated_by(name)');
   rollout = r.data || [];
 }
+// spawned launch tasks are outputs of the checklist, not new standards to roll out
+const rolloutStds = () => {
+  const spawnedIds = new Set(rollout.map(r=>r.spawned_actionable_id).filter(Boolean));
+  return acts.filter(a=>a.status==='completed' && !spawnedIds.has(a.id));
+};
 function rolloutRemaining(){
   if(!centres) return 0;
-  const stds = acts.filter(a=>a.status==='completed');
+  const stds = rolloutStds();
   let n = 0;
   centres.filter(c=>c.status!=='live').forEach(c=>{
     stds.forEach(a=>{
@@ -663,7 +679,7 @@ function rolloutRemaining(){
 // every approved Standard becomes a checklist row for each not-yet-live centre
 async function syncRollout(){
   if(!centres) return;
-  const stds = acts.filter(a=>a.status==='completed');
+  const stds = rolloutStds();
   const missing = [];
   centres.filter(c=>c.status!=='live').forEach(c=>{
     stds.forEach(a=>{
@@ -671,11 +687,81 @@ async function syncRollout(){
         missing.push({centre_id:c.id, actionable_id:a.id});
     });
   });
-  if(!missing.length) return;
-  const {error} = await db.from('centre_rollout').insert(missing);
-  if(error) return;
+  // launch playbook follow-up: when a spawned launch task completes, its item turns done
+  const follow = rollout.filter(r=>r.spawned_actionable_id && r.status!=='done' && r.status!=='na'
+    && acts.some(a=>a.id===r.spawned_actionable_id && a.status==='completed'));
+  let changed = false;
+  if(missing.length){
+    const {error} = await db.from('centre_rollout').insert(missing);
+    if(!error) changed = true;
+  }
+  for(const r of follow){
+    const {error} = await db.from('centre_rollout').update({status:'done', updated_at:new Date().toISOString()}).eq('id',r.id);
+    if(!error) changed = true;
+  }
+  if(!changed) return;
   await loadRollout(); updateCounts();
   if(view==='rollout' && !openActId) render();
+}
+
+/* ---------- FETS OS · compliance calendar data + engine ---------- */
+const CAT_ICO = {certification:'🎓', audit:'🔍', insurance:'🛡️', contract:'📜', bill:'💡', other:'📌'};
+const FREQ_LABEL = {once:'one-time', monthly:'monthly', quarterly:'quarterly', half_yearly:'half-yearly', yearly:'yearly'};
+const daysTo = d => Math.ceil((new Date(d+'T00:00:00') - new Date(new Date().toDateString()))/864e5);
+async function loadCompliance(){
+  const r = await db.from('compliance_items').select('*, staff:owner_staff_id(name), centres:centre_id(name)');
+  if(r.error){ compliance = null; return; }
+  compliance = r.data;
+}
+function complianceDue(){
+  if(!compliance) return 0;
+  return compliance.filter(i=>i.active && daysTo(i.next_due)<=i.lead_days).length;
+}
+function nextDueAfter(item){
+  const add = {monthly:1, quarterly:3, half_yearly:6, yearly:12}[item.frequency];
+  if(!add) return null;
+  const d = new Date(item.next_due+'T00:00:00');
+  d.setMonth(d.getMonth()+add);
+  return d.toISOString().slice(0,10);
+}
+// keep the spawn window shorter than the cycle so monthly items can't cascade
+const effLead = i => Math.min(i.lead_days, {monthly:21, quarterly:80, half_yearly:170, yearly:350}[i.frequency] ?? i.lead_days);
+let compEngineBusy = false;
+// spawns the actionable for every item inside its lead window, once per cycle
+// (admin only: creating actionables/assignments is admin-gated by RLS)
+async function runComplianceEngine(){
+  if(!compliance || compEngineBusy || !me || me.role!=='admin') return;
+  compEngineBusy = true;
+  let spawned = 0;
+  try{
+    for(const item of compliance.filter(i=>i.active)){
+      if(daysTo(item.next_due) > effLead(item)) continue;
+      if(item.last_spawned_due === item.next_due) continue;
+      // claim the cycle first so two open tabs can't double-spawn
+      const claim = await db.from('compliance_items')
+        .update({last_spawned_due:item.next_due, next_due:nextDueAfter(item)||item.next_due,
+                 active:item.frequency!=='once', updated_at:new Date().toISOString()})
+        .eq('id',item.id).eq('next_due',item.next_due).select();
+      if(claim.error || !claim.data || !claim.data.length) continue;
+      const code = nextCode();
+      const cName = item.centres?.name;
+      const desc = `Compliance / renewal task — auto-created by the Compliance Calendar.\nCategory: ${item.category}${cName?`\nCentre: ${cName}`:''}\nDue: ${fmtDate(item.next_due)}${item.notes?`\n${item.notes}`:''}`;
+      const na = await db.from('actionables').insert({code, title:item.title, description:desc,
+        status:'pending', due_date:item.next_due, created_by:me?me.id:null}).select().single();
+      if(na.error) continue;
+      if(item.owner_staff_id)
+        await db.from('actionable_assignments').insert({actionable_id:na.data.id, staff_id:item.owner_staff_id, member_role:'lead'});
+      await db.from('actionable_updates').insert({actionable_id:na.data.id, staff_id:me?me.id:null, kind:'status_change',
+        message:`📅 ${code} · ${item.title} — due ${fmtDate(item.next_due)}. Auto-created by the compliance calendar${item.staff?.name?', assigned to '+item.staff.name:''}.`});
+      await db.from('compliance_items').update({last_actionable_id:na.data.id}).eq('id',item.id);
+      spawned++;
+      await loadActs();
+    }
+  } finally { compEngineBusy = false; }
+  if(!spawned) return;
+  await loadCompliance(); updateCounts();
+  toast(`📅 ${spawned} renewal task${spawned>1?'s':''} created!`);
+  if((view==='compliance'||view==='dash') && !openActId) render();
 }
 
 /* ---------- identity (Supabase Auth) ---------- */
@@ -763,6 +849,8 @@ function render(){
     m.innerHTML = listView(items,'STANDARDS 📘','The finished output — approved standards compiled centre by centre, ready to study, reuse, or roll out at Centre #3.','Approved actionables become standards and land here.');
   } else if(view==='rollout'){
     renderRollout();
+  } else if(view==='compliance'){
+    renderCompliance();
   } else if(view==='assign'){
     renderAssign();
   } else if(view==='settings'){
@@ -800,24 +888,40 @@ function renderDash(){
     <section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">Work in motion</span><h2>Actionables to move next</h2></div><button onclick="go('team')">See all team work →</button></div>
       ${live.length?`<div class="dashboard-action-grid">${live.slice(0,6).map(cardHTML).join('')}</div>`:`<div class="empty"><div class="big">✓</div><p>Every live actionable is cleared. Assign the next standardisation task when ready.</p>${me&&me.role==='admin'?`<button class="studio-button" style="margin-top:18px" onclick="go('assign')">Create the next actionable</button>`:''}</div>`}</section>
     ${completed.length?`<section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">Recently approved</span><h2>Reusable standards</h2></div><button onclick="go('completed')">Browse library →</button></div><div class="dashboard-action-grid">${completed.slice(0,3).map(cardHTML).join('')}</div></section>`:''}
-    ${rolloutDashHTML(completed)}
+    ${rolloutDashHTML()}
+    ${complianceDashHTML()}
     <section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">Team overview</span><h2>Ownership at a glance</h2></div></div><div class="team-strip">${teamCards}</div></section>`;
 }
 // FETS OS strip on the dashboard: launch progress per upcoming centre
-function rolloutDashHTML(completed){
+function rolloutDashHTML(){
   const launching = (centres||[]).filter(c=>c.status!=='live');
-  if(!launching.length || !completed.length) return '';
+  const stds = centres ? rolloutStds() : [];
+  if(!launching.length || !stds.length) return '';
   return `<section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">FETS OS</span><h2>Centre rollout</h2></div><button onclick="go('rollout')">Open rollout board →</button></div>
     <div class="team-strip">${launching.map(c=>{
-      const cleared = completed.filter(a=>{
+      const cleared = stds.filter(a=>{
         const r = rollout.find(x=>x.centre_id===c.id && x.actionable_id===a.id);
         return r && (r.status==='done'||r.status==='na');
       }).length;
-      const pct = Math.round(cleared/completed.length*100);
+      const pct = Math.round(cleared/stds.length*100);
       return `<div class="team-load-card" style="cursor:pointer" onclick="go('rollout')">
         <div class="team-person"><span class="avatar" style="background:var(--pop-ink)">🚀</span><div><strong>${esc(c.name)}</strong><small>${c.status==='launching'?'Launch in progress':'Planned'}</small></div></div>
         <div class="progress-line" style="margin-top:14px"><span style="width:${pct}%"></span></div>
-        <div class="progress-caption"><span>${cleared} of ${completed.length} standards</span><b>${pct}%</b></div></div>`;
+        <div class="progress-caption"><span>${cleared} of ${stds.length} standards</span><b>${pct}%</b></div></div>`;
+    }).join('')}</div></section>`;
+}
+// compliance radar on the dashboard: anything overdue or inside its lead window
+function complianceDashHTML(){
+  if(!compliance) return '';
+  const due = compliance.filter(i=>i.active && daysTo(i.next_due)<=i.lead_days)
+    .sort((a,b)=>a.next_due<b.next_due?-1:1);
+  if(!due.length) return '';
+  return `<section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">FETS OS</span><h2>Compliance radar</h2></div><button onclick="go('compliance')">Open the calendar →</button></div>
+    <div class="team-strip">${due.slice(0,4).map(i=>{
+      const d = daysTo(i.next_due);
+      return `<div class="team-load-card" style="cursor:pointer" onclick="go('compliance')">
+        <div class="team-person"><span class="avatar" style="background:${d<0?'#ff3b3b':'var(--pop-ink)'}">${CAT_ICO[i.category]||'📌'}</span>
+        <div><strong>${esc(i.title)}</strong><small>${d<0?(-d)+' days overdue':d===0?'due today':'due '+fmtDate(i.next_due)}</small></div></div></div>`;
     }).join('')}</div></section>`;
 }
 
@@ -836,7 +940,7 @@ function renderRollout(){
       3. Hit <b>RUN</b>, then refresh this page — the rollout board lights up. 🎉</div></div>`;
     return;
   }
-  const stds = acts.filter(a=>a.status==='completed');
+  const stds = rolloutStds();
   const liveC = centres.filter(c=>c.status==='live');
   const newC = centres.filter(c=>c.status!=='live');
   const isAdmin = !!me && me.role==='admin';
@@ -848,9 +952,12 @@ function renderRollout(){
     const pct = items.length ? Math.round(cleared/items.length*100) : 0;
     const rows = items.map(({a,r})=>{
       const st = r ? r.status : 'not_started';
+      const launchTask = r && r.spawned_actionable_id ? acts.find(x=>x.id===r.spawned_actionable_id) : null;
       return `<div class="ro-item">
         <span class="mcode" onclick="openAct('${a.id}')">${esc(a.code)}</span>
         <span class="ro-title" onclick="openAct('${a.id}')">${esc(a.title)}</span>
+        ${launchTask?`<button class="tool" title="Open the launch task" onclick="openAct('${launchTask.id}')">↗ ${esc(launchTask.code)}</button>`
+          :r&&isAdmin?`<button class="tool" title="Create a pre-filled launch actionable for this centre" onclick="spawnRollout('${r.id}')">🚀 spawn task</button>`:''}
         ${r?`<button class="tool" title="Add a note" onclick="editRoNote('${r.id}')">📝</button>`:''}
         <span class="pill ${roPill(st)}" title="Click to change status" ${r?`onclick="cycleRollout('${r.id}')"`:''}>${RO_LABEL[st]}</span>
         ${r&&r.note?`<div class="ro-note">📝 ${esc(r.note)}${r.staff?.name?' · '+esc(r.staff.name):''}</div>`:''}
@@ -917,6 +1024,134 @@ async function markCentreLive(id){
   const {error} = await db.from('centres').update({status:'live', launched_at:new Date().toISOString().slice(0,10)}).eq('id',id);
   if(error) return toast('Failed: '+error.message);
   await loadRollout(); updateCounts(); render(); toast('🎉 '+c.name+' is LIVE!');
+}
+// launch playbook: turn a checklist item into a pre-filled actionable for the new centre
+async function spawnRollout(id){
+  if(!me || me.role!=='admin') return toast('Admin access only');
+  const r = rollout.find(x=>x.id===id); if(!r || r.spawned_actionable_id) return;
+  const a = acts.find(x=>x.id===r.actionable_id), c = centres.find(x=>x.id===r.centre_id);
+  if(!a || !c) return;
+  if(!confirm(`Create a launch actionable for ${c.name} from standard ${a.code} · ${a.title}?`)) return;
+  const {data:dataRows} = await db.from('actionable_data').select('label').eq('actionable_id',a.id);
+  const items = [...new Set((dataRows||[]).filter(d=>!d.label.startsWith('__')).map(d=>{
+    const p = d.label.split('·').map(s=>s.trim()).filter(Boolean);
+    return p.length>1 ? p.slice(1).join(' · ') : p[0];
+  }))];
+  const code = nextCode();
+  const desc = `Launch task for ${c.name}, spawned from approved standard ${a.code} · ${a.title}.\nReplicate every item to the standard the live centres set — match or beat it.\nLog collected details as "${c.name} · <Item>" so they join the centre-comparison table.`;
+  const {data:na, error} = await db.from('actionables').insert({code, title:`${c.name} · ${a.title}`,
+    description:desc, status:'pending', created_by:me.id}).select().single();
+  if(error) return toast('Failed: '+error.message);
+  const instr = `Open standard ${a.code} in the library — it shows exactly what ${centres.filter(x=>x.status==='live').map(x=>x.name).join(' and ')||'the live centres'} have. Replicate it for ${c.name}.${items.length?`\nItems to cover:\n${items.map((it,i)=>`${i+1}. ${it}`).join('\n')}`:''}`;
+  await db.from('actionable_updates').insert({actionable_id:na.id, staff_id:me.id, kind:'instruction', message:instr});
+  await db.from('actionable_updates').insert({actionable_id:na.id, staff_id:me.id, kind:'status_change',
+    message:`${me.name} spawned this launch task from standard ${a.code} for ${c.name} 🚀`});
+  await db.from('centre_rollout').update({spawned_actionable_id:na.id, status:'in_progress',
+    updated_by:me.id, updated_at:new Date().toISOString()}).eq('id',id);
+  await loadActs(); await loadRollout(); updateCounts();
+  toast('🚀 '+code+' created for '+c.name+'!');
+  openAct(na.id);
+}
+
+/* ---------- FETS OS · compliance calendar view ---------- */
+function compRow(i){
+  const isAdmin = !!me && me.role==='admin';
+  const d = daysTo(i.next_due);
+  const pill = !i.active ? `<span class="pill na">PAUSED</span>`
+    : d<0 ? `<span class="pill overdue">${-d}D OVERDUE</span>`
+    : d<=i.lead_days ? `<span class="pill pending">DUE IN ${d}D</span>`
+    : `<span class="pill ok">${fmtDate(i.next_due)}</span>`;
+  const linked = i.last_actionable_id && acts.find(a=>a.id===i.last_actionable_id);
+  return `<div class="ro-item">
+    <span style="font-size:19px;flex-shrink:0">${CAT_ICO[i.category]||'📌'}</span>
+    <span class="ro-title" style="cursor:${linked?'pointer':'default'}" ${linked?`onclick="openAct('${linked.id}')"`:''}>${esc(i.title)}</span>
+    ${i.centres&&i.centres.name?`<span class="cat-chip">${esc(i.centres.name)}</span>`:''}
+    <span class="cat-chip">↻ ${FREQ_LABEL[i.frequency]||esc(i.frequency)}</span>
+    ${i.staff&&i.staff.name?av(i.staff.name,true):''}
+    ${linked?`<button class="tool" onclick="openAct('${linked.id}')">↗ ${esc(linked.code)}</button>`:''}
+    ${isAdmin?`<span class="row-tools"><button class="tool" title="Edit" onclick="editComp('${i.id}')">✏️</button><button class="tool" title="${i.active?'Pause':'Resume'}" onclick="toggleComp('${i.id}')">${i.active?'⏸':'▶️'}</button><button class="tool" title="Delete" onclick="delComp('${i.id}')">🗑️</button></span>`:''}
+    ${pill}
+    ${i.notes?`<div class="ro-note">${esc(i.notes)}</div>`:''}
+  </div>`;
+}
+function compFormHTML(item){
+  const it = item || {title:'', category:'other', frequency:'yearly', next_due:'', lead_days:30, notes:'', centre_id:'', owner_staff_id:''};
+  return `<div class="form-card comp-form">
+    <h3 style="font-family:'Bangers',cursive;font-weight:400;font-size:22px;letter-spacing:.04em;margin-bottom:4px">${item?'EDIT ITEM ✏️':'NEW COMPLIANCE ITEM 📅'}</h3>
+    <label>WHAT EXPIRES OR RECURS?</label><input id="cfTitle" value="${esc(it.title)}" placeholder="e.g. Renew Shimna's PVTC certification / Upload October internet bills">
+    <div class="comp-grid">
+      <div><label>CATEGORY</label><select id="cfCat">${Object.keys(CAT_ICO).map(c=>`<option value="${c}" ${c===it.category?'selected':''}>${CAT_ICO[c]} ${c}</option>`).join('')}</select></div>
+      <div><label>CENTRE (OPTIONAL)</label><select id="cfCentre"><option value="">— whole company —</option>${(centres||[]).map(c=>`<option value="${c.id}" ${c.id===it.centre_id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+      <div><label>OWNER (OPTIONAL)</label><select id="cfOwner"><option value="">— unassigned —</option>${staff.map(s=>`<option value="${s.id}" ${s.id===it.owner_staff_id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
+      <div><label>REPEATS</label><select id="cfFreq">${Object.entries(FREQ_LABEL).map(([k,v])=>`<option value="${k}" ${k===it.frequency?'selected':''}>${v}</option>`).join('')}</select></div>
+      <div><label>NEXT DUE DATE</label><input type="date" id="cfDue" value="${it.next_due||''}"></div>
+      <div><label>CREATE TASK … DAYS BEFORE</label><input type="number" id="cfLead" value="${it.lead_days}" min="0" max="365"></div>
+    </div>
+    <label>NOTES — CARRIED INTO THE AUTO-CREATED TASK</label><textarea id="cfNotes" style="height:64px;border-radius:14px" placeholder="Renewal portal link, account numbers, who to call…">${esc(it.notes||'')}</textarea>
+    <div style="margin-top:24px;display:flex;gap:12px">
+      <button class="btn primary" onclick="saveComp(${item?`'${item.id}'`:'null'})">💾 SAVE ITEM</button>
+      <button class="btn sm" style="align-self:center" onclick="compForm=null;render()">CANCEL</button>
+    </div></div>`;
+}
+function renderCompliance(){
+  const m = $('main');
+  if(!compliance){
+    m.innerHTML = `<div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>COMPLIANCE CALENDAR 📅</h1>
+      <p>Certifications, audits, insurance, AMCs and recurring bills — but the compliance table isn't set up yet.</p></div></div>
+      <div class="form-card"><div class="steps"><b>One-time setup (1 minute):</b><br>
+      1. Open <b>supabase.com</b> → your project → <b>SQL Editor</b>.<br>
+      2. Paste the entire contents of the latest <b>patch_fets_os.sql</b> (came with this app).<br>
+      3. Hit <b>RUN</b>, then refresh this page. 🎉</div></div>`;
+    return;
+  }
+  const isAdmin = !!me && me.role==='admin';
+  const act = compliance.filter(i=>i.active).sort((a,b)=>a.next_due<b.next_due?-1:1);
+  const paused = compliance.filter(i=>!i.active);
+  const overdue = act.filter(i=>daysTo(i.next_due)<0);
+  const soon = act.filter(i=>{const d=daysTo(i.next_due); return d>=0 && d<=i.lead_days;});
+  const later = act.filter(i=>daysTo(i.next_due)>i.lead_days);
+  const sec = (label,list)=>list.length?`<div><span class="section-label">${label}</span></div><div class="ro-list" style="margin:0 0 30px">${list.map(compRow).join('')}</div>`:'';
+  m.innerHTML = `<div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>COMPLIANCE CALENDAR 📅</h1>
+    <p>Certifications, audits, insurance, AMCs and recurring bills. Each item auto-creates its actionable ahead of the due date — and pings the team chat. Nothing expires unnoticed.</p></div>
+    ${isAdmin?`<div class="list-tools"><button class="btn primary" onclick="compForm={};render()">＋ ADD ITEM</button></div>`:''}</div>
+    ${compForm?compFormHTML(compForm.id?compForm:null):''}
+    ${act.length||paused.length
+      ? `${sec('🚨 OVERDUE',overdue)}${sec('⏰ DUE SOON',soon)}${sec('📆 SCHEDULED',later)}${sec('⏸ PAUSED',paused)}`
+      : `<div class="empty"><div class="big">📅</div><p>No compliance items yet.${isAdmin?' Add the first — PVTC certs, site audits, insurance, internet bills…':''}</p></div>`}`;
+}
+function editComp(id){
+  const i = compliance.find(x=>x.id===id); if(!i) return;
+  compForm = {...i}; render(); window.scrollTo({top:0, behavior:'smooth'});
+}
+async function saveComp(id){
+  if(!me || me.role!=='admin') return toast('Admin access only');
+  const title = $('cfTitle').value.trim(), due = $('cfDue').value;
+  if(!title || !due) return toast('Title and due date are required');
+  const patch = {title, category:$('cfCat').value, centre_id:$('cfCentre').value||null,
+    owner_staff_id:$('cfOwner').value||null, frequency:$('cfFreq').value, next_due:due,
+    lead_days:Math.max(0, parseInt($('cfLead').value)||0), notes:$('cfNotes').value.trim()||null,
+    updated_at:new Date().toISOString()};
+  const {error} = id ? await db.from('compliance_items').update(patch).eq('id',id)
+                     : await db.from('compliance_items').insert({...patch, active:true});
+  if(error) return toast('Failed: '+error.message);
+  compForm = null;
+  await loadCompliance(); updateCounts(); render(); toast('📅 Saved!');
+  runComplianceEngine();
+}
+async function toggleComp(id){
+  if(!me || me.role!=='admin') return toast('Admin access only');
+  const i = compliance.find(x=>x.id===id); if(!i) return;
+  const {error} = await db.from('compliance_items').update({active:!i.active, updated_at:new Date().toISOString()}).eq('id',id);
+  if(error) return toast('Failed: '+error.message);
+  await loadCompliance(); updateCounts(); render(); toast(i.active?'⏸ Paused':'▶️ Resumed');
+}
+async function delComp(id){
+  if(!me || me.role!=='admin') return toast('Admin access only');
+  const i = compliance.find(x=>x.id===id);
+  if(!confirm(`Delete compliance item "${i.title}"? Already-created tasks stay.`)) return;
+  const {error} = await db.from('compliance_items').delete().eq('id',id);
+  if(error) return toast('Failed: '+error.message);
+  await loadCompliance(); updateCounts(); render(); toast('🗑️ Deleted');
 }
 
 /* ---------- detail ---------- */
@@ -1277,6 +1512,8 @@ async function submitAct(actId){
 }
 async function approveAct(actId){
   await setStatus(actId,'completed','approved this actionable — published as a Standard');
+  // new standard → rollout rows; approved launch task → its checklist item turns done
+  await loadRollout(); await syncRollout(); updateCounts();
   toast('📘 Approved · published as a Standard!');
 }
 
@@ -1403,7 +1640,8 @@ async function enterApp(session){
   }
   applyMe();
   await loadActs();
-  await loadRollout(); updateCounts();
+  await loadRollout(); await loadCompliance(); updateCounts();
+  runComplianceEngine();
   go('dash');
 }
 (async function(){
