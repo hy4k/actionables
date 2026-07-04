@@ -53,11 +53,18 @@ Keep this convention or the comparison table breaks.
 
 ## 3. App behaviour
 
-- **No login.** Front page = Team Dashboard: one card per staff member, assigned work as
-  bright chips, completed as green struck-through chips. Everything viewable by everyone.
-- Identity: "WHO ARE YOU?" modal appears only when someone tries to act; stored in
-  localStorage (`fets_me`). Admin-only UI (Assign, Chat Alerts, Add Step, Approve) keys off
-  the picked identity being Midhun.
+- **No login.** Identity: "WHO ARE YOU?" modal appears only when someone tries to act
+  (or via the top-bar user chip); stored in localStorage (`fets_me`). Admin-only UI
+  (Assign, Chat Alerts, Add Step, Approve) keys off the picked identity being Midhun.
+- **Shell (2026-07 hub redesign, per Midhun):** NO left sidebar, NO hero banner, NO metric
+  tiles, NO "work in motion" grid. A slim navy top bar (logo → dashboard, user chip) sits
+  above every view. The Dashboard IS the menu: big comic tiles — 🎯 ACTIONABLES (all statuses
+  in one view), 🚀 <centre> ROLLOUT (named after the launching centre, e.g. MANGALORE),
+  📅 COMPLIANCE, plus admin tiles ✨ ASSIGN and 🔔 CHAT ALERTS — followed by the compliance
+  radar, rollout strip and team-overview strips. Every sub-view has a ← DASHBOARD button.
+- **Actionables view = everything**: sections IN PROGRESS / NOT STARTED / AWAITING REVIEW /
+  STANDARDS LIBRARY, with the viewer's own work floated to the top of each section.
+  (The old My/Team/Pending/Completed views were merged into this per Midhun.)
 - **Actionable page (open):** header card (code, title, status, buttons + point-wise
   "WHAT'S THIS FOR?" + team chips + facts) → 📌 INSTRUCTIONS — STEP BY STEP (numbered,
   admin adds steps) → 🔨 WORK LOG (anyone posts) → 🗂️ COLLECTED DATA + 📎 FILES

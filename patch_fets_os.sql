@@ -72,7 +72,7 @@ create policy anon_all_compliance on compliance_items for all using (true) with 
 insert into centres (name, status, sort_order) values
   ('Cochin Centre', 'live', 1),
   ('Calicut Centre', 'live', 2),
-  ('Centre #3', 'launching', 3)
+  ('Mangalore Centre', 'launching', 3)
 on conflict (name) do nothing;
 
 -- Done! Refresh actionables.html — the Centre Rollout view lights up.
