@@ -39,7 +39,10 @@ reference document comparing centres side by side, applied to future centres.
 - `centres` (name unique, status: live|launching|planned, sort_order, launched_at) — seeded:
   Cochin Centre (live), Calicut Centre (live), Centre #3 (launching). Requires `patch_fets_os.sql`.
 - `centre_rollout` (centre↔actionable unique pair, status: not_started|in_progress|done|na,
-  note, updated_by) — one row per approved Standard per not-yet-live centre
+  note, updated_by, spawned_actionable_id) — one row per approved Standard per not-yet-live centre
+- `compliance_items` (title, category: certification|audit|insurance|contract|bill|other,
+  centre_id?, owner_staff_id?, frequency: once|monthly|quarterly|half_yearly|yearly, next_due,
+  lead_days, notes, active, last_spawned_due, last_actionable_id) — the renewal calendar
 - Trigger `trg_notify_gchat` (pg_net): every insert into actionable_updates POSTs to the
   Google Chat webhook if set. Never blocks on failure.
 
@@ -74,6 +77,20 @@ Keep this convention or the comparison table breaks.
   ＋ ADD CENTRE (planned) and ▶ START LAUNCH (planned → launching). Dashboard shows a
   "Centre rollout" strip with per-centre progress while any centre is launching/planned.
   If the tables are missing the view shows a run-patch_fets_os.sql setup card instead.
+- **Launch Playbook:** on a rollout item the admin can 🚀 SPAWN TASK — creates a pre-filled
+  actionable "<Centre> · <Standard title>" whose brief says match-or-beat the live centres
+  and whose first instruction lists every item from the standard's collected data. The item
+  links to the task (↗ ACT-xx) and turns done automatically when the task is approved.
+  Spawned launch tasks are excluded from becoming new rollout checklist rows (no loops).
+- **Compliance Calendar (nav "Compliance 📅"):** `compliance_items` = expiring/recurring
+  obligations (PVTC/CELPIP certs, site audits, insurance, AMCs, monthly bills). A client-side
+  engine runs at boot: any active item inside its lead window (lead_days before next_due,
+  clamped below the cycle length) spawns its actionable once per cycle — claim-first update
+  guards against double-spawn from two tabs — assigns the owner as lead, carries notes into
+  the brief, and posts a status update (= Google Chat ping). next_due then advances by the
+  frequency; 'once' items deactivate. View groups OVERDUE / DUE SOON / SCHEDULED / PAUSED
+  with admin add/edit/pause/delete. Dashboard shows a "Compliance radar" strip when anything
+  is due. Engine runs whenever anyone opens the app (no server); pg_cron is future hardening.
 
 ## 4. Design language (do not drift from this)
 
