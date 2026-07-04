@@ -550,16 +550,23 @@ input:focus,textarea:focus,select:focus{border-color:var(--pop-cyan);box-shadow:
   <div class="pick-card">
     <span class="hero-star" style="top:-30px;left:-26px;color:var(--yellow)">★</span>
     <span class="hero-star" style="bottom:-26px;right:-24px;color:var(--cyan);animation-delay:.4s">★</span>
-    <div class="hero-title" style="font-size:44px">WHO ARE YOU?<span class="zap">⚡</span></div>
-    <div class="hero-sub">Pick your name to post updates, data & files</div>
-    <div class="staff-btns" id="staffBtns"><div class="spin">Loading team…</div></div>
+    <div class="hero-title" style="font-size:44px">FETS ACTIONABLES<span class="zap">⚡</span></div>
+    <div class="hero-sub">Sign in with your FETS account</div>
+    <form id="loginForm" style="max-width:380px;margin:0 auto;text-align:left">
+      <label>EMAIL</label>
+      <input id="loginEmail" type="email" autocomplete="email" required placeholder="you@fets.in">
+      <label>PASSWORD</label>
+      <input id="loginPass" type="password" autocomplete="current-password" required placeholder="••••••••">
+      <button class="btn primary" id="loginBtn" type="submit" style="margin-top:24px;width:100%;justify-content:center">🔓 SIGN IN</button>
+      <p class="hint" style="text-align:center;margin-top:14px">No account yet? Ask Midhun to set one up for you.</p>
+    </form>
   </div>
 </div>
 
 <div id="app" style="display:block"><div class="shell">
   <header class="mobile-top">
     <div class="logo">FETS <span>ACTIONABLES!</span></div>
-    <button class="mobile-me" onclick="openPicker()"><span class="avatar sm" id="mobileMeAvatar" style="background:#bbb">?</span><strong id="mobileMeName">PICK YOUR NAME</strong></button>
+    <button class="mobile-me" onclick="signOutUser()"><span class="avatar sm" id="mobileMeAvatar" style="background:#bbb">?</span><strong id="mobileMeName">SIGNED OUT</strong></button>
   </header>
   <aside class="sidebar">
     <div class="logo">FETS <span>ACTIONABLES!</span></div>
@@ -574,7 +581,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--pop-cyan);box-shadow:
     <div class="nav-label admin" id="adminSep">ADMIN ZONE</div>
     <button class="nav-btn app-nav" data-view="assign" id="assignNav"><span class="ico">✨</span> Assign Actionable</button>
     <button class="nav-btn app-nav" data-view="settings" id="settingsNav"><span class="ico">🔔</span> Chat Alerts</button>
-    <div class="user-chip" style="cursor:pointer" onclick="openPicker()"><span class="avatar" id="meAvatar" style="background:#bbb">?</span><div><div class="nm" id="meName">WHO ARE YOU?</div><div class="rl" id="meRole">tap to choose</div></div><button class="sw" id="swBtn">PICK</button></div>
+    <div class="user-chip" style="cursor:pointer" onclick="signOutUser()"><span class="avatar" id="meAvatar" style="background:#bbb">?</span><div><div class="nm" id="meName">SIGNED OUT</div><div class="rl" id="meRole">tap to sign out</div></div><button class="sw" id="swBtn">SIGN OUT</button></div>
   </aside>
   <main class="main" id="main"><div class="spin">Loading…</div></main>
   <nav class="mobile-nav" aria-label="Actionables navigation">
@@ -596,7 +603,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const AV_COLORS = ['#ff007f','#00b8e0','#e0a000','#b14bf4','#ff5100','#00c050','#2563EB','#DC2626'];
-let me = null, staff = [], acts = [], view = 'dash', openActId = null, pendingAction = null;
+let me = null, staff = [], acts = [], view = 'dash', openActId = null;
 let centres = null, rollout = [];   // null centres = rollout tables not set up yet
 
 const $ = id => document.getElementById(id);
@@ -613,10 +620,8 @@ const toast = m => { $('toast').textContent=m; $('toast').classList.add('show');
 /* ---------- data ---------- */
 async function loadStaff(){
   const {data,error} = await db.from('staff').select('*').eq('active',true).order('created_at');
-  if(error){ $('staffBtns').innerHTML = `<p style="color:var(--pink)">Could not connect: ${esc(error.message)}</p>`; return error; }
+  if(error) return error;
   staff = data;
-  $('staffBtns').innerHTML = staff.map(s =>
-    `<button class="staff-btn" onclick="pickUser('${s.id}')"><span class="shine"></span>${av(s.name)}<span>${esc(s.name)}<span class="role">${s.role==='admin'?'⚡ Admin':'Team member'}</span></span></button>`).join('');
 }
 async function loadActs(){
   const {data,error} = await db.from('actionables')
@@ -673,20 +678,11 @@ async function syncRollout(){
   if(view==='rollout' && !openActId) render();
 }
 
-/* ---------- identity ---------- */
-function openPicker(){ $('pickModal').style.display='flex'; }
-$('pickModal').onclick = e => { if(e.target.id==='pickModal') $('pickModal').style.display='none'; };
-function requireMe(fn){
-  if(me) return true;
-  pendingAction = fn; openPicker(); toast('Pick your name first!');
-  return false;
-}
-function pickUser(id){
-  me = staff.find(s=>s.id===id);
-  localStorage.setItem('fets_me', id);
-  $('pickModal').style.display='none';
+/* ---------- identity (Supabase Auth) ---------- */
+function requireMe(){ if(me) return true; toast('Sign in first!'); return false; }
+function applyMe(){
   $('meName').textContent = me.name; $('meRole').textContent = me.role==='admin'?'Admin':'Team member';
-  $('swBtn').textContent = 'SWITCH';
+  $('swBtn').textContent = 'SIGN OUT';
   const chipAv = $('meAvatar');
   chipAv.style.background = color(me.name); chipAv.textContent = initials(me.name);
   const mobileAv = $('mobileMeAvatar');
@@ -697,22 +693,15 @@ function pickUser(id){
   $('mobileAssignNav').style.display = isAdmin?'flex':'none';
   $('settingsNav').style.display = isAdmin?'flex':'none';
   $('adminSep').style.display = isAdmin?'block':'none';
-  if(!isAdmin && (view==='assign'||view==='settings')){
-    view='dash'; openActId=null;
-  }
-  updateCounts();
-  document.querySelectorAll('.app-nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
-  if(pendingAction){ const f=pendingAction; pendingAction=null; f(); }
-  else render();
 }
-function switchUser(){ openPicker(); }
+function signOutUser(){
+  if(!confirm('Sign out of FETS Actionables?')) return;
+  db.auth.signOut().then(()=>location.reload());
+}
 
 /* ---------- navigation ---------- */
 function go(v){
-  if((v==='assign'||v==='settings') && !me){
-    pendingAction=()=>go(v); openPicker(); toast('Pick your name first!'); return;
-  }
-  if((v==='assign'||v==='settings') && me.role!=='admin'){
+  if((v==='assign'||v==='settings') && (!me || me.role!=='admin')){
     toast('Admin access only'); return;
   }
   view=v; openActId=null;
@@ -761,12 +750,6 @@ function render(){
   if(view==='dash'){
     renderDash();
   } else if(view==='my'){
-    if(!me){
-      m.innerHTML = `<div class="page-head"><h1>MY ACTIONABLES 🎯</h1></div>
-        <div class="empty"><div class="big">🤔</div><p>I don't know who you are yet!</p>
-        <button class="btn primary" style="margin-top:20px" onclick="openPicker()">PICK MY NAME!</button></div>`;
-      return;
-    }
     const items = acts.filter(a=>mine(a) && a.status!=='completed');
     m.innerHTML = listView(items,'MY ACTIONABLES 🎯',`Everything on your plate, ${me.name.split(' ')[0]}. Open one to add updates, data or files.`,'Nothing on your plate right now. Enjoy it!');
   } else if(view==='team'){
@@ -1345,10 +1328,12 @@ async function createAct(){
 }
 async function addStaffDlg(){
   const name=prompt('New staff member\'s full name:'); if(!name||!name.trim()) return;
-  const {error}=await db.from('staff').insert({name:name.trim(), role:'member'});
+  const email=prompt('Their login email — must match the user you create in Supabase → Authentication → Add user:');
+  if(email===null) return;
+  const {error}=await db.from('staff').insert({name:name.trim(), role:'member', email:(email||'').trim().toLowerCase()||null});
   if(error) return toast('Failed: '+error.message);
   const {data}=await db.from('staff').select('*').eq('active',true).order('created_at'); staff=data;
-  toast('👥 '+name.trim()+' added to the team!'); render();
+  toast('👥 '+name.trim()+' added — now create their login in Supabase → Authentication'); render();
 }
 
 /* ---------- settings (Google Chat) ---------- */
@@ -1384,24 +1369,48 @@ async function testWebhook(){
   await loadActs(); toast('Test sent — check your Chat space!');
 }
 
-/* ---------- boot ---------- */
-(async function(){
+/* ---------- boot (Supabase Auth) ---------- */
+async function doLogin(e){
+  e.preventDefault();
+  const b=$('loginBtn'); b.disabled=true; b.textContent='SIGNING IN…';
+  const {data,error} = await db.auth.signInWithPassword({email:$('loginEmail').value.trim(), password:$('loginPass').value});
+  b.disabled=false; b.textContent='🔓 SIGN IN';
+  if(error) return toast('❌ '+error.message);
+  $('pickModal').style.display='none';
+  enterApp(data.session);
+}
+async function enterApp(session){
   const err = await loadStaff();
   if(err){
     $('main').innerHTML = `<div class="page-head"><h1>ONE STEP LEFT! 🛠️</h1>
-      <p>This app is pointed at your Supabase project, but the database isn't set up yet.</p></div>
-      <div class="form-card"><div class="steps"><b>Do this once (2 minutes):</b><br>
-      1. Open <b>supabase.com</b> → your project → <b>SQL Editor</b>.<br>
-      2. Paste the entire contents of <b>setup_fets_actionables.sql</b> (came with this app).<br>
-      3. Hit <b>RUN</b>. It creates all tables, storage and pre-loads ACT-01 &amp; ACT-02.<br>
-      4. Refresh this page — the dashboard will light up. 🎉</div></div>`;
+      <p>You're signed in, but the app couldn't read the database: ${esc(err.message)}</p></div>
+      <div class="form-card"><div class="steps"><b>Check (admin):</b><br>
+      1. <b>setup_fets_actionables.sql</b> has been run in the Supabase SQL Editor.<br>
+      2. <b>patch_auth_upgrade.sql</b> has been run (it grants signed-in users access).<br>
+      3. Refresh this page. 🎉</div>
+      <div style="margin-top:22px"><button class="btn" onclick="signOutUser()">SIGN OUT</button></div></div>`;
     return;
   }
+  me = staff.find(s=>s.auth_user_id===session.user.id) || null;
+  if(!me){
+    $('main').innerHTML = `<div class="page-head"><h1>ACCOUNT NOT LINKED 🔗</h1>
+      <p>You signed in as <b>${esc(session.user.email||'')}</b>, but no staff profile is linked to that email.</p></div>
+      <div class="form-card"><div class="steps"><b>Fix (admin, 1 minute) — in Supabase → SQL Editor run:</b><br>
+      <code>update staff set email = '${esc(session.user.email||'')}' where name = 'THE PERSON''S NAME';</code><br>
+      then sign out and back in.</div>
+      <div style="margin-top:22px"><button class="btn" onclick="signOutUser()">SIGN OUT</button></div></div>`;
+    return;
+  }
+  applyMe();
   await loadActs();
   await loadRollout(); updateCounts();
-  const saved=localStorage.getItem('fets_me');
-  if(saved && staff.some(s=>s.id===saved)) pickUser(saved);
-  else go('dash');
+  go('dash');
+}
+(async function(){
+  $('loginForm').onsubmit = doLogin;
+  const {data:{session}} = await db.auth.getSession();
+  if(session) enterApp(session);
+  else $('pickModal').style.display='flex';
 })();
 </script>
 </body>

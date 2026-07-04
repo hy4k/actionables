@@ -98,14 +98,24 @@ Comic doodle / pop-art, derived from a reference button Midhun supplied:
 - Source spreadsheets: `Site codes.xlsx` (Shimna), `NET WORK DETAILS KOCHI AND CALICUT (1).xlsx`
   (Nimmy) — should be uploaded as attachments to ACT-02 / ACT-01 via the Files panel.
 
-## 6. Security posture (known, accepted for now)
+## 6. Security posture
 
-- Anon key in page source + allow-all RLS ⇒ anyone with the link/key can read & write everything.
-- Edit/delete permissions are client-side only (cosmetic against technical users).
-- ACT-01 contains plaintext WiFi/ISP-portal passwords.
-- **Agreed next step: BEFORE Centre #3 staff onboard → Supabase Auth (email+password),
-  staff linked to auth.uid, real RLS (admin-only instructions/approval, team-only edits).**
-  ≈ one working session. Keep repo PRIVATE because of the key.
+**This branch (`auth-upgrade`) implements the agreed auth switch:**
+- `actionables.html` requires Supabase Auth sign-in (email+password). Identity comes from
+  the session (`staff.auth_user_id = auth.uid()`), not localStorage; the WHO ARE YOU picker
+  is gone. Sign out via the user chip.
+- `patch_auth_upgrade.sql` drops every allow-all anon policy and adds real RLS:
+  read = any signed-in staff; instructions/approve/assign/settings/centres = admin only
+  (`is_admin()`); data + files = admin or that actionable's assigned team
+  (`is_on_actionable()`); updates insert as yourself only. Anon key alone: zero rows.
+- staff↔auth linking is by email (`staff.email`), with a trigger that auto-links
+  future auth users on creation.
+- Verified on the mirror project: anon lockout, admin matrix, member restrictions.
+- Known accepted limits: the `attachments` bucket stays public for direct links, and an
+  assigned member could flip their own actionable's status via the raw API.
+- Go-live is a coordinated step (create users → run patch → deploy new HTML) — see README.
+- ACT-01 still contains plaintext WiFi/ISP-portal passwords; now at least behind login.
+- Keep repo PRIVATE (anon key + project URL in source).
 
 ## 7. Backlog / ideas discussed
 
