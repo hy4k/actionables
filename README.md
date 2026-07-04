@@ -12,6 +12,8 @@ Single-file web app, comic-doodle design, Supabase backend.
 | `patch_fets_os.sql` | The FETS OS tables: Centre Rollout, Launch Playbook, Compliance Calendar — run once (safe to re-run). |
 | `patch_delete_policy.sql` | Only if your DB was created with an older setup script. |
 | `patch_auth_upgrade.sql` | **The auth switch.** Email+password login + real RLS. Read its header before running. |
+| `reset_fresh_start.sql` | ⚠ Wipes ALL data and re-seeds Midhun + the three centres (Mangalore launching). |
+| `deploy_act.sh` | Deploys the app to fets.live/act on the VPS (see script header). |
 | `PROJECT_CONTEXT.md` | **Full project memory.** Read this first — new developers AND Claude sessions. |
 
 ## Quick start

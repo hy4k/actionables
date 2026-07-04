@@ -549,6 +549,36 @@ input:focus,textarea:focus,select:focus{border-color:var(--pop-cyan);box-shadow:
 .cat-chip{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#eef0ea;border:1px solid var(--studio-line);border-radius:99px;padding:3px 10px;color:#667;white-space:nowrap;flex-shrink:0}
 .comp-form{max-width:none;margin-bottom:30px}
 .comp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0 18px}
+
+/* ===== HUB REDESIGN — no sidebar; navy topbar; dashboard IS the menu ===== */
+.topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:18px;padding:12px clamp(16px,3vw,34px);background:linear-gradient(180deg,#16203a 0%,#101828 100%);border-bottom:2px solid var(--pop-ink);box-shadow:0 4px 0 var(--pop-yellow)}
+.topbar .logo{font-family:'Bangers',cursive;font-weight:400;font-size:24px;letter-spacing:.03em;color:#fff;padding:0;text-shadow:none;cursor:pointer;line-height:1}
+.topbar .logo span{color:var(--pop-yellow);-webkit-text-stroke:0}
+.topbar .logo::before{content:'A';display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;margin-right:9px;border-radius:9px;background:var(--pop-yellow);color:var(--studio-navy);transform:rotate(-5deg);box-shadow:2.5px 2.5px 0 var(--pop-pink);font-size:17px}
+.top-tag{font-family:'Comic Neue',cursive;font-size:12px;font-weight:700;color:#8d99b3}
+.top-me{margin-left:auto;display:flex;align-items:center;gap:9px;padding:5px 15px 5px 6px;background:rgba(255,255,255,.07);border:2px solid rgba(255,214,51,.45);border-radius:99px;box-shadow:2.5px 2.5px 0 rgba(0,0,0,.35);color:#fff;transition:transform .15s}
+.top-me:hover{transform:translateY(-1px)}
+.top-me strong{font-family:'Bangers',cursive;font-weight:400;font-size:15px;letter-spacing:.05em;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.main{max-width:1240px;margin:0 auto;padding:44px clamp(20px,4vw,64px) 90px}
+@media(max-width:700px){.top-tag{display:none}.main{padding:26px 16px 70px}}
+
+/* dashboard hub tiles */
+.hub-welcome{margin:4px 0 30px}
+.hub-welcome h1{font-family:'Bangers',cursive;font-size:clamp(34px,4.4vw,52px);letter-spacing:.015em;line-height:1;color:var(--pop-ink);text-shadow:3px 3px 0 rgba(255,214,51,.6)}
+.hub-welcome p{margin-top:10px;color:#666;font-weight:400;max-width:640px}
+.hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:22px;margin-bottom:42px}
+.hub-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding:26px 26px 22px;background:#fff;border:2px solid var(--pop-ink);border-radius:22px;cursor:pointer;text-align:left;transition:transform .18s cubic-bezier(.175,.885,.32,1.275)}
+.hub-grid .hub-tile:nth-child(3n+1){box-shadow:6px 6px 0 var(--pop-cyan)}
+.hub-grid .hub-tile:nth-child(3n+2){box-shadow:6px 6px 0 var(--pop-yellow)}
+.hub-grid .hub-tile:nth-child(3n){box-shadow:6px 6px 0 var(--pop-violet)}
+.hub-tile:hover{transform:translateY(-4px) rotate(-.6deg)}
+.hub-tile:nth-child(even):hover{transform:translateY(-4px) rotate(.6deg)}
+.hub-tile .ht-ico{font-size:34px;line-height:1}
+.hub-tile .ht-name{font-family:'Bangers',cursive;font-size:24px;letter-spacing:.04em;line-height:1.05;color:var(--pop-ink)}
+.hub-tile .ht-sub{font-size:13px;font-weight:400;color:#666}
+.hub-tile .ht-count{position:absolute;top:16px;right:18px;font-family:'Bangers',cursive;font-size:15px;letter-spacing:.05em;background:var(--pop-pink);color:#fff;border:2px solid var(--pop-ink);border-radius:99px;padding:3px 12px;box-shadow:2px 2px 0 var(--pop-ink)}
+.hub-tile .progress-line{width:100%;margin-top:6px}
+.hub-tile.admin{background:#fff7fb;border-style:dashed}
 </style>
 </head>
 <body>
@@ -570,39 +600,14 @@ input:focus,textarea:focus,select:focus{border-color:var(--pop-cyan);box-shadow:
   </div>
 </div>
 
-<div id="app" style="display:block"><div class="shell">
-  <header class="mobile-top">
-    <div class="logo">FETS <span>ACTIONABLES!</span></div>
-    <button class="mobile-me" onclick="signOutUser()"><span class="avatar sm" id="mobileMeAvatar" style="background:#bbb">?</span><strong id="mobileMeName">SIGNED OUT</strong></button>
+<div id="app" style="display:block">
+  <header class="topbar">
+    <button class="logo" onclick="go('dash')">FETS <span>ACTIONABLES!</span></button>
+    <span class="top-tag">Cochin · Calicut · Mangalore soon 🚀</span>
+    <button class="top-me" onclick="signOutUser()" title="Sign out"><span class="avatar sm" id="topMeAvatar" style="background:#bbb">?</span><strong id="topMeName">SIGNED OUT</strong></button>
   </header>
-  <aside class="sidebar">
-    <div class="logo">FETS <span>ACTIONABLES!</span></div>
-    <div class="side-tag">Cochin · Calicut · Centre #3 soon 🚀</div>
-    <div class="nav-label">WORKSPACE</div>
-    <button class="nav-btn app-nav" data-view="dash"><span class="ico">🏠</span> Dashboard</button>
-    <button class="nav-btn app-nav" data-view="my"><span class="ico">🎯</span> My Actionables <span class="count" id="c-my">0</span></button>
-    <button class="nav-btn app-nav" data-view="team"><span class="ico">👥</span> Team Actionables <span class="count" id="c-team">0</span></button>
-    <button class="nav-btn app-nav" data-view="pending"><span class="ico">⏳</span> Pending Actionables <span class="count" id="c-pending">0</span></button>
-    <button class="nav-btn app-nav" data-view="completed"><span class="ico">📘</span> Completed Actionables <span class="count" id="c-completed">0</span></button>
-    <button class="nav-btn app-nav" data-view="rollout"><span class="ico">🚀</span> Centre Rollout <span class="count" id="c-rollout">0</span></button>
-    <button class="nav-btn app-nav" data-view="compliance"><span class="ico">📅</span> Compliance <span class="count" id="c-comp">0</span></button>
-    <div class="nav-label admin" id="adminSep">ADMIN ZONE</div>
-    <button class="nav-btn app-nav" data-view="assign" id="assignNav"><span class="ico">✨</span> Assign Actionable</button>
-    <button class="nav-btn app-nav" data-view="settings" id="settingsNav"><span class="ico">🔔</span> Chat Alerts</button>
-    <div class="user-chip" style="cursor:pointer" onclick="signOutUser()"><span class="avatar" id="meAvatar" style="background:#bbb">?</span><div><div class="nm" id="meName">SIGNED OUT</div><div class="rl" id="meRole">tap to sign out</div></div><button class="sw" id="swBtn">SIGN OUT</button></div>
-  </aside>
   <main class="main" id="main"><div class="spin">Loading…</div></main>
-  <nav class="mobile-nav" aria-label="Actionables navigation">
-    <button class="mobile-nav-btn app-nav" data-view="dash"><span class="ico">🏠</span>Home</button>
-    <button class="mobile-nav-btn app-nav" data-view="my"><span class="ico">🎯</span>My work</button>
-    <button class="mobile-nav-btn app-nav" data-view="team"><span class="ico">👥</span>Team</button>
-    <button class="mobile-nav-btn app-nav" data-view="pending"><span class="ico">⏳</span>Pending</button>
-    <button class="mobile-nav-btn app-nav" data-view="completed"><span class="ico">📘</span>Library</button>
-    <button class="mobile-nav-btn app-nav" data-view="rollout"><span class="ico">🚀</span>Rollout</button>
-    <button class="mobile-nav-btn app-nav" data-view="compliance"><span class="ico">📅</span>Renewals</button>
-    <button class="mobile-nav-btn app-nav admin-only" data-view="assign" id="mobileAssignNav"><span class="ico">✨</span>Assign</button>
-  </nav>
-</div></div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -643,12 +648,8 @@ async function loadActs(){
 }
 const mine = a => !!me && a.actionable_assignments.some(x => x.staff && x.staff.id === me.id);
 function updateCounts(){
-  $('c-my').textContent = me ? acts.filter(a => mine(a) && a.status!=='completed').length : '?';
-  $('c-team').textContent = acts.filter(a => a.status!=='completed').length;
-  $('c-pending').textContent = acts.filter(a => a.status==='pending'||a.status==='submitted').length;
-  $('c-completed').textContent = acts.filter(a => a.status==='completed').length;
-  $('c-rollout').textContent = rolloutRemaining();
-  $('c-comp').textContent = complianceDue();
+  // counts live on the dashboard tiles now — refresh them if the hub is on screen
+  if(view==='dash' && !openActId && document.querySelector('.hub-grid')) renderDash();
 }
 
 /* ---------- FETS OS · centre rollout data ---------- */
@@ -767,20 +768,12 @@ async function runComplianceEngine(){
 /* ---------- identity (Supabase Auth) ---------- */
 function requireMe(){ if(me) return true; toast('Sign in first!'); return false; }
 function applyMe(){
-  $('meName').textContent = me.name; $('meRole').textContent = me.role==='admin'?'Admin':'Team member';
-  $('swBtn').textContent = 'SIGN OUT';
-  const chipAv = $('meAvatar');
-  chipAv.style.background = color(me.name); chipAv.textContent = initials(me.name);
-  const mobileAv = $('mobileMeAvatar');
-  mobileAv.style.background = color(me.name); mobileAv.textContent = initials(me.name);
-  $('mobileMeName').textContent = me.name;
-  const isAdmin = me.role==='admin';
-  $('assignNav').style.display = isAdmin?'flex':'none';
-  $('mobileAssignNav').style.display = isAdmin?'flex':'none';
-  $('settingsNav').style.display = isAdmin?'flex':'none';
-  $('adminSep').style.display = isAdmin?'block':'none';
+  const av = $('topMeAvatar');
+  av.style.background = color(me.name); av.textContent = initials(me.name);
+  $('topMeName').textContent = me.name;
 }
 function signOutUser(){
+  if(!me) return;
   if(!confirm('Sign out of FETS Actionables?')) return;
   db.auth.signOut().then(()=>location.reload());
 }
@@ -791,10 +784,9 @@ function go(v){
     toast('Admin access only'); return;
   }
   view=v; openActId=null;
-  document.querySelectorAll('.app-nav').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
   render();
 }
-document.querySelectorAll('.app-nav').forEach(b=>b.onclick=()=>go(b.dataset.view));
+const backHome = () => `<button class="back" onclick="go('dash')">← DASHBOARD</button>`;
 
 /* ---------- list rendering ---------- */
 const progressOf = a => ({pending:12,in_progress:58,submitted:88,completed:100}[a.status]||0);
@@ -831,41 +823,49 @@ function listView(items, title, subtitle, emptyMsg, sections){
 }
 
 function render(){
-  const m = $('main');
   if(openActId) return renderDetail();
-  if(view==='dash'){
-    renderDash();
-  } else if(view==='my'){
-    const items = acts.filter(a=>mine(a) && a.status!=='completed');
-    m.innerHTML = listView(items,'MY ACTIONABLES 🎯',`Everything on your plate, ${me.name.split(' ')[0]}. Open one to add updates, data or files.`,'Nothing on your plate right now. Enjoy it!');
-  } else if(view==='team'){
-    const items = acts.filter(a=>a.status!=='completed');
-    m.innerHTML = listView(items,'TEAM ACTIONABLES 👥','Every live actionable across the whole FETS team.','No live actionables. Create one from Assign Actionable!');
-  } else if(view==='pending'){
-    const p = acts.filter(a=>a.status==='pending'), s = acts.filter(a=>a.status==='submitted');
-    m.innerHTML = listView([...p,...s],'PENDING ⏳','Waiting to be started, or submitted and waiting for review.','Nothing pending — all clear!',[{label:'⏳ NOT STARTED YET',items:p},{label:'🔍 AWAITING REVIEW',items:s}]);
-  } else if(view==='completed'){
-    const items = acts.filter(a=>a.status==='completed');
-    m.innerHTML = listView(items,'STANDARDS 📘','The finished output — approved standards compiled centre by centre, ready to study, reuse, or roll out at Centre #3.','Approved actionables become standards and land here.');
-  } else if(view==='rollout'){
-    renderRollout();
-  } else if(view==='compliance'){
-    renderCompliance();
-  } else if(view==='assign'){
-    renderAssign();
-  } else if(view==='settings'){
-    renderSettings();
-  }
+  if(view==='acts') renderActs();
+  else if(view==='rollout') renderRollout();
+  else if(view==='compliance') renderCompliance();
+  else if(view==='assign') renderAssign();
+  else if(view==='settings') renderSettings();
+  else { view='dash'; renderDash(); }
 }
 
-/* ---------- team dashboard ---------- */
+/* ---------- actionables (everything in one place) ---------- */
+function renderActs(){
+  const secs = [
+    {label:'🔨 IN PROGRESS',       items: acts.filter(a=>a.status==='in_progress')},
+    {label:'⏳ NOT STARTED',       items: acts.filter(a=>a.status==='pending')},
+    {label:'🔍 AWAITING REVIEW',   items: acts.filter(a=>a.status==='submitted')},
+    {label:'📘 STANDARDS LIBRARY', items: acts.filter(a=>a.status==='completed')},
+  ];
+  // your own work floats to the top of each section
+  secs.forEach(s=>s.items.sort((a,b)=>((mine(b)?1:0)-(mine(a)?1:0)) || (a.code<b.code?-1:1)));
+  $('main').innerHTML = backHome() + listView(acts, 'ACTIONABLES 🎯',
+    me?`Everything in one place, ${esc(me.name.split(' ')[0])} — your work floats to the top of each section.`
+      :'Everything in one place — live work first, then the approved standards library.',
+    'No actionables yet. The admin creates the first one from the dashboard.', secs);
+}
+
+/* ---------- dashboard = the menu (hub tiles) ---------- */
 function renderDash(){
   const live=acts.filter(a=>a.status!=='completed');
-  const pending=acts.filter(a=>a.status==='pending'||a.status==='submitted');
-  const completed=acts.filter(a=>a.status==='completed');
   const submitted=acts.filter(a=>a.status==='submitted');
-  const closure=acts.length?Math.round(completed.length/acts.length*100):0;
+  const completed=acts.filter(a=>a.status==='completed');
+  const isAdmin=!!me&&me.role==='admin';
   const firstName=me?me.name.split(' ')[0]:'team';
+  const myCount=me?acts.filter(a=>mine(a)&&a.status!=='completed').length:0;
+  // rollout tile: named after the centre being launched
+  const launching=(centres||[]).filter(c=>c.status!=='live');
+  const stds=centres?rolloutStds():[];
+  const roCentre=launching[0]||null;
+  let roPct=0;
+  if(roCentre&&stds.length){
+    const cleared=stds.filter(a=>{const r=rollout.find(x=>x.centre_id===roCentre.id&&x.actionable_id===a.id);return r&&(r.status==='done'||r.status==='na');}).length;
+    roPct=Math.round(cleared/stds.length*100);
+  }
+  const compDue=complianceDue();
   const teamCards = staff.map(s=>{
     const forMe = a => a.actionable_assignments.some(x=>x.staff && x.staff.id===s.id);
     const assigned = acts.filter(a=>forMe(a) && a.status!=='completed');
@@ -874,22 +874,24 @@ function renderDash(){
       <div class="team-numbers"><span><b>${assigned.length}</b> active</span><span><b>${done.length}</b> library</span></div></div>`;
   }).join('');
   $('main').innerHTML = `
-    <section class="studio-hero"><div><span class="hero-eyebrow"><i></i> FETS operations · live workspace</span>
-      <h1>Turn team work into <em>lasting standards.</em></h1>
-      <p>Good to see you, ${esc(firstName)}. Assign the next outcome, follow its development and keep the finished knowledge ready for every future FETS centre.</p>
-      <div class="hero-actions">${me&&me.role==='admin'?`<button class="studio-button" onclick="go('assign')">＋ Assign actionable</button>`:''}<button class="studio-button ghost" onclick="go('completed')">Open the library →</button></div></div>
-      <div class="hero-score"><span>Standards readiness</span><strong>${closure}%</strong><p>${completed.length} of ${acts.length} actionables have become reusable standards.</p><div class="score-line"><i style="width:${closure}%"></i></div></div></section>
-    <section class="metric-row">
-      <div class="studio-metric"><span>Active now</span><strong>${live.length}</strong><small>Actionables moving</small></div>
-      <div class="studio-metric"><span>Needs attention</span><strong>${pending.length}</strong><small>Not started or in review</small></div>
-      <div class="studio-metric"><span>Ready to approve</span><strong>${submitted.length}</strong><small>Team submissions</small></div>
-      <div class="studio-metric"><span>Knowledge library</span><strong>${completed.length}</strong><small>Approved standards</small></div>
-    </section>
-    <section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">Work in motion</span><h2>Actionables to move next</h2></div><button onclick="go('team')">See all team work →</button></div>
-      ${live.length?`<div class="dashboard-action-grid">${live.slice(0,6).map(cardHTML).join('')}</div>`:`<div class="empty"><div class="big">✓</div><p>Every live actionable is cleared. Assign the next standardisation task when ready.</p>${me&&me.role==='admin'?`<button class="studio-button" style="margin-top:18px" onclick="go('assign')">Create the next actionable</button>`:''}</div>`}</section>
-    ${completed.length?`<section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">Recently approved</span><h2>Reusable standards</h2></div><button onclick="go('completed')">Browse library →</button></div><div class="dashboard-action-grid">${completed.slice(0,3).map(cardHTML).join('')}</div></section>`:''}
-    ${rolloutDashHTML()}
+    <div class="hub-welcome"><h1>HEY ${esc(firstName.toUpperCase())}! ⚡</h1>
+      <p>${myCount?`You have ${myCount} actionable${myCount>1?'s':''} on your plate. `:''}Standards approved here become the playbook for every new FETS centre.</p></div>
+    <div class="hub-grid">
+      <button class="hub-tile" onclick="go('acts')"><span class="ht-ico">🎯</span><span class="ht-name">ACTIONABLES</span>
+        <span class="ht-sub">${live.length} live · ${submitted.length} in review · ${completed.length} standard${completed.length===1?'':'s'}</span>
+        ${live.length?`<span class="ht-count">${live.length}</span>`:''}</button>
+      <button class="hub-tile" onclick="go('rollout')"><span class="ht-ico">🚀</span><span class="ht-name">${esc((roCentre?roCentre.name:'Centre').toUpperCase())} ROLLOUT</span>
+        <span class="ht-sub">${stds.length?`${roPct}% of standards in place`:'The launch checklist for the next centre'}</span>
+        ${stds.length?`<div class="progress-line"><span style="width:${roPct}%"></span></div>`:''}</button>
+      <button class="hub-tile" onclick="go('compliance')"><span class="ht-ico">📅</span><span class="ht-name">COMPLIANCE</span>
+        <span class="ht-sub">${compliance?(compDue?`${compDue} renewal${compDue>1?'s':''} need${compDue>1?'':'s'} attention`:'All renewals on track'):'Certs, audits, bills & renewals'}</span>
+        ${compDue?`<span class="ht-count">${compDue}</span>`:''}</button>
+      ${isAdmin?`
+      <button class="hub-tile admin" onclick="go('assign')"><span class="ht-ico">✨</span><span class="ht-name">ASSIGN ACTIONABLE</span><span class="ht-sub">Create a task and put the right people on it</span></button>
+      <button class="hub-tile admin" onclick="go('settings')"><span class="ht-ico">🔔</span><span class="ht-name">CHAT ALERTS</span><span class="ht-sub">Google Chat pings for every update</span></button>`:''}
+    </div>
     ${complianceDashHTML()}
+    ${rolloutDashHTML()}
     <section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">Team overview</span><h2>Ownership at a glance</h2></div></div><div class="team-strip">${teamCards}</div></section>`;
 }
 // FETS OS strip on the dashboard: launch progress per upcoming centre
@@ -932,7 +934,7 @@ const roPill = st => st==='done' ? 'completed' : st;
 function renderRollout(){
   const m = $('main');
   if(!centres){
-    m.innerHTML = `<div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>CENTRE ROLLOUT 🚀</h1>
+    m.innerHTML = backHome() + `<div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>CENTRE ROLLOUT 🚀</h1>
       <p>Every approved standard becomes a launch checklist for each new centre — but the rollout tables aren't set up yet.</p></div></div>
       <div class="form-card"><div class="steps"><b>One-time setup (1 minute):</b><br>
       1. Open <b>supabase.com</b> → your project → <b>SQL Editor</b>.<br>
@@ -975,7 +977,8 @@ function renderRollout(){
         :`<div class="ro-empty">No approved standards yet. The moment an actionable is approved into the library it appears here automatically as a launch item for ${esc(c.name)}.</div>`}
     </div>`;
   }).join('') || `<div class="empty"><div class="big">🎉</div><p>Every centre is live! Add the next one when expansion begins.</p></div>`;
-  m.innerHTML = `<div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>CENTRE ROLLOUT 🚀</h1>
+  const roTitle = newC.length===1 ? `${newC[0].name.toUpperCase()} ROLLOUT` : 'CENTRE ROLLOUT';
+  m.innerHTML = backHome() + `<div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>${esc(roTitle)} 🚀</h1>
     <p>Every approved standard automatically becomes a launch-checklist item for each new centre. When a centre's list turns green, it is ready to open.</p></div>
     ${isAdmin?`<div class="list-tools"><button class="btn primary" onclick="addCentre()">＋ ADD CENTRE</button></div>`:''}</div>
     ${liveStrip}${cards}`;
@@ -1096,7 +1099,7 @@ function compFormHTML(item){
 function renderCompliance(){
   const m = $('main');
   if(!compliance){
-    m.innerHTML = `<div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>COMPLIANCE CALENDAR 📅</h1>
+    m.innerHTML = backHome() + `<div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>COMPLIANCE CALENDAR 📅</h1>
       <p>Certifications, audits, insurance, AMCs and recurring bills — but the compliance table isn't set up yet.</p></div></div>
       <div class="form-card"><div class="steps"><b>One-time setup (1 minute):</b><br>
       1. Open <b>supabase.com</b> → your project → <b>SQL Editor</b>.<br>
@@ -1111,7 +1114,7 @@ function renderCompliance(){
   const soon = act.filter(i=>{const d=daysTo(i.next_due); return d>=0 && d<=i.lead_days;});
   const later = act.filter(i=>daysTo(i.next_due)>i.lead_days);
   const sec = (label,list)=>list.length?`<div><span class="section-label">${label}</span></div><div class="ro-list" style="margin:0 0 30px">${list.map(compRow).join('')}</div>`:'';
-  m.innerHTML = `<div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>COMPLIANCE CALENDAR 📅</h1>
+  m.innerHTML = backHome() + `<div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>COMPLIANCE CALENDAR 📅</h1>
     <p>Certifications, audits, insurance, AMCs and recurring bills. Each item auto-creates its actionable ahead of the due date — and pings the team chat. Nothing expires unnoticed.</p></div>
     ${isAdmin?`<div class="list-tools"><button class="btn primary" onclick="compForm={};render()">＋ ADD ITEM</button></div>`:''}</div>
     ${compForm?compFormHTML(compForm.id?compForm:null):''}
@@ -1526,7 +1529,7 @@ function renderAssign(){
   if(!me || me.role!=='admin'){
     view='dash'; return render();
   }
-  $('main').innerHTML = `
+  $('main').innerHTML = backHome() + `
     <div class="page-head"><h1>ASSIGN A NEW ACTIONABLE ✨</h1><p>Create a task, give it a memorable code, and put the right people on it.</p></div>
     <div class="form-card">
       <div class="code-preview">🔖 ${nextCode()} <small>auto-assigned code</small></div>
@@ -1575,7 +1578,7 @@ async function addStaffDlg(){
 
 /* ---------- settings (Google Chat) ---------- */
 async function renderSettings(){
-  $('main').innerHTML = `
+  $('main').innerHTML = backHome() + `
     <div class="page-head"><h1>GOOGLE CHAT ALERTS 🔔</h1><p>Connect a Google Chat space so every update, instruction and submission pings the team automatically.</p></div>
     <div class="form-card">
       <label>GOOGLE CHAT WEBHOOK URL</label>
