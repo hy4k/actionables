@@ -65,6 +65,15 @@ Keep this convention or the comparison table breaks.
 - **Actionables view = everything**: sections IN PROGRESS / NOT STARTED / AWAITING REVIEW /
   STANDARDS LIBRARY, with the viewer's own work floated to the top of each section.
   (The old My/Team/Pending/Completed views were merged into this per Midhun.)
+- **Edit/delete permissions (2026-07):** an actionable's LEAD (not just admin) can ✏️ EDIT
+  (title/description/due date) and 🗑️ DELETE it while open, and remove/add team members
+  (✕ on chips). Admin can additionally edit/delete approved standards. Delete cleans up
+  storage files first; DB cascades handle the rest. On the auth-locked build this needs
+  `patch_lead_delete.sql` (adds `is_lead_on_actionable()` + updates the delete RLS policy —
+  baseline `patch_auth_upgrade.sql` only let admin delete).
+- **Manage Team (admin-only hub tile):** edit any staff member's name/role inline, or
+  soft-deactivate them (`staff.active=false` — history stays intact, they vanish from
+  pickers/assignment until reactivated). Self-demotion/self-removal blocked in the UI.
 - **Actionable page (open):** header card (code, title, status, buttons + point-wise
   "WHAT'S THIS FOR?" + team chips + facts) → 📌 INSTRUCTIONS — STEP BY STEP (numbered,
   admin adds steps) → 🔨 WORK LOG (anyone posts) → 🗂️ COLLECTED DATA + 📎 FILES
