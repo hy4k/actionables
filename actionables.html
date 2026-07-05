@@ -633,6 +633,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const AV_COLORS = ['#ff007f','#00b8e0','#e0a000','#b14bf4','#ff5100','#00c050','#2563EB','#DC2626'];
 let me = null, staff = [], acts = [], view = 'dash', openActId = null;
+let editingAct = false, allStaff = [], teamEditId = null;
 let centres = null, rollout = [];   // null centres = rollout tables not set up yet
 let compliance = null, compForm = null;   // null compliance = table not set up yet
 let rolloutTarget = 10;   // approved standards needed to unlock the rollout board
@@ -799,10 +800,10 @@ function signOutUser(){
 
 /* ---------- navigation ---------- */
 function go(v){
-  if((v==='assign'||v==='settings') && (!me || me.role!=='admin')){
+  if((v==='assign'||v==='settings'||v==='team') && (!me || me.role!=='admin')){
     toast('Admin access only'); return;
   }
-  view=v; openActId=null;
+  view=v; openActId=null; teamEditId=null;
   render();
 }
 const backHome = () => `<button class="back" onclick="go('dash')">← DASHBOARD</button>`;
@@ -848,6 +849,7 @@ function render(){
   else if(view==='compliance') renderCompliance();
   else if(view==='assign') renderAssign();
   else if(view==='settings') renderSettings();
+  else if(view==='team') renderTeam();
   else { view='dash'; renderDash(); }
 }
 
@@ -909,6 +911,7 @@ function renderDash(){
         ${compDue?`<span class="ht-count">${compDue}</span>`:''}</button>
       ${isAdmin?`
       <button class="hub-tile admin" onclick="go('assign')"><span class="ht-ico">✨</span><span class="ht-name">ASSIGN ACTIONABLE</span><span class="ht-sub">Create a task and put the right people on it</span></button>
+      <button class="hub-tile admin" onclick="go('team')"><span class="ht-ico">👥</span><span class="ht-name">MANAGE TEAM</span><span class="ht-sub">${staff.length} active member${staff.length===1?'':'s'} · edit or remove</span></button>
       <button class="hub-tile admin" onclick="go('settings')"><span class="ht-ico">🔔</span><span class="ht-name">CHAT ALERTS</span><span class="ht-sub">Google Chat pings for every update</span></button>`:''}
     </div>
     ${complianceDashHTML()}
@@ -1214,13 +1217,55 @@ async function delComp(id){
 }
 
 /* ---------- detail ---------- */
-function openAct(id){ openActId=id; render(); }
+function actEditFormHTML(a){
+  return `<div style="margin-top:22px;padding-top:20px;border-top:3px dashed #e0dccb">
+    <label>TITLE</label><input id="editTitle" value="${esc(a.title)}">
+    <label>WHAT'S THIS FOR? — POINT-WISE</label><textarea id="editDesc" style="height:110px;border-radius:16px" placeholder="one point per line">${esc(a.description||'')}</textarea>
+    <label>DUE DATE</label><input type="date" id="editDue" value="${a.due_date||''}">
+    <div style="margin-top:18px;display:flex;gap:12px">
+      <button class="btn primary" onclick="saveActEdit('${a.id}')">💾 SAVE CHANGES</button>
+      <button class="btn sm" onclick="editingAct=false;render()">CANCEL</button>
+    </div>
+  </div>`;
+}
+async function saveActEdit(actId){
+  const title=$('editTitle').value.trim(); if(!title) return toast('Title is required');
+  const patch = {title, description:$('editDesc').value.trim()||null, due_date:$('editDue').value||null};
+  const {error} = await db.from('actionables').update(patch).eq('id',actId);
+  if(error) return toast('Failed: '+error.message);
+  await db.from('actionable_updates').insert({actionable_id:actId, staff_id:me.id, kind:'status_change', message:`${me.name} edited this actionable's details.`});
+  editingAct=false;
+  await loadActs(); render(); toast('💾 Saved!');
+}
+async function deleteAct(actId){
+  const a = acts.find(x=>x.id===actId); if(!a) return;
+  if(!confirm(`Delete ${a.code} · ${a.title} permanently? This removes its work log, data and files, and cannot be undone.`)) return;
+  const {data:files} = await db.from('actionable_files').select('storage_path').eq('actionable_id',actId);
+  if(files && files.length) await db.storage.from('attachments').remove(files.map(f=>f.storage_path));
+  const {error} = await db.from('actionables').delete().eq('id',actId);
+  if(error) return toast('Failed: '+error.message);
+  openActId=null; editingAct=false;
+  await loadActs(); await loadRollout(); updateCounts();
+  go('acts'); toast('🗑️ '+a.code+' deleted');
+}
+async function removeMember(assignmentId, actId){
+  const a = acts.find(x=>x.id===actId);
+  const assign = a && a.actionable_assignments.find(x=>x.id===assignmentId);
+  if(!confirm(`Remove ${assign&&assign.staff?assign.staff.name:'this person'} from ${a?a.code:'this actionable'}?`)) return;
+  const {error} = await db.from('actionable_assignments').delete().eq('id',assignmentId);
+  if(error) return toast('Failed: '+error.message);
+  if(assign && assign.staff) await db.from('actionable_updates').insert({actionable_id:actId, staff_id:me.id, kind:'status_change', message:`${assign.staff.name} was removed from this actionable.`});
+  await loadActs(); render(); toast('👥 Removed');
+}
+function openAct(id){ openActId=id; editingAct=false; render(); }
 function renderDetail(){
   const a = acts.find(x=>x.id===openActId);
   if(!a){ openActId=null; return render(); }
   const isAdmin = !!me && me.role==='admin';
   const people = a.actionable_assignments.filter(x=>x.staff);
   const canManage = !!me && (mine(a) || isAdmin);   // edit rights: Midhun + task team only
+  const isLead = !!me && people.some(p=>p.staff.id===me.id && p.member_role==='lead');
+  const canEditAct = isAdmin || isLead;   // edit title/desc/due, delete, manage team roster
   const open = a.status!=='completed';
 
   // point-wise purpose notes (one line = one point; fallback: split sentences)
@@ -1241,6 +1286,10 @@ function renderDetail(){
       btns += `<button class="btn green" onclick="approveAct('${a.id}')">✔ APPROVE → LIBRARY</button>`;
       btns += `<button class="btn" onclick="setStatus('${a.id}','in_progress','sent it back for more work')">↩ SEND BACK</button>`;
     }
+    if(canEditAct && !editingAct){
+      btns += `<button class="btn sm" onclick="editingAct=true;render()">✏️ EDIT</button>`;
+      btns += `<button class="btn sm" onclick="deleteAct('${a.id}')">🗑️ DELETE</button>`;
+    }
   }
 
   const stepsHTML = steps.length ? steps.map((u,i)=>`
@@ -1258,7 +1307,7 @@ function renderDetail(){
     || '<p class="soft">Nothing logged yet. Be the first!</p>';
 
   $('main').innerHTML = `
-    <button class="back" onclick="openActId=null;render()">← BACK</button>
+    <button class="back" onclick="openActId=null;editingAct=false;render()">← BACK</button>
 
     <div class="head-card">
       <div class="head-row">
@@ -1267,6 +1316,7 @@ function renderDetail(){
         <span class="pill ${a.status}">${STATUS_LABEL[a.status]}</span>
         ${btns}
       </div>
+      ${canEditAct&&editingAct ? actEditFormHTML(a) : `
       <div class="head-grid">
         <div>
           <div class="mini-head">🎯 WHAT'S THIS FOR?</div>
@@ -1275,8 +1325,8 @@ function renderDetail(){
         <div>
           <div class="mini-head">👥 TEAM ON IT</div>
           <div class="team-chips">
-            ${people.map(p=>`<span class="team-chip">${av(p.staff.name,true)}${esc(p.staff.name)}${p.member_role==='lead'?'<span class="lead-tag">LEAD</span>':''}</span>`).join('')||'<span class="soft">Nobody assigned yet.</span>'}
-            ${isAdmin&&open?`<select id="addMemberSel" style="width:auto;padding:6px 10px;font-size:13px">${staff.filter(s=>!people.some(p=>p.staff.id===s.id)).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select>
+            ${people.map(p=>`<span class="team-chip">${av(p.staff.name,true)}${esc(p.staff.name)}${p.member_role==='lead'?'<span class="lead-tag">LEAD</span>':''}${canEditAct&&open?`<button class="tool" style="margin-left:2px" title="Remove from actionable" onclick="removeMember('${p.id}','${a.id}')">✕</button>`:''}</span>`).join('')||'<span class="soft">Nobody assigned yet.</span>'}
+            ${canEditAct&&open?`<select id="addMemberSel" style="width:auto;padding:6px 10px;font-size:13px">${staff.filter(s=>!people.some(p=>p.staff.id===s.id)).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select>
             <button class="btn sm" onclick="addMember('${a.id}')">＋ ADD</button>`:''}
           </div>
           <div class="facts">
@@ -1289,7 +1339,7 @@ function renderDetail(){
       </div>
       <div class="workflow-progress">
         ${['Brief ready','Work in progress','Submitted for review','In the library'].map((label,i)=>`<div class="workflow-stage ${i<stageIndex?'done':i===stageIndex?'current':''}">${String(i+1).padStart(2,'0')} · ${label}</div>`).join('')}
-      </div>
+      </div>`}
     </div>
 
     <div class="panel"><h3>📌 INSTRUCTIONS — STEP BY STEP</h3>
@@ -1328,16 +1378,19 @@ function renderDetail(){
 
 /* ---------- standards document (completed actionables) ---------- */
 function renderStandardDoc(a, points, people){
+  const isAdmin = !!me && me.role==='admin';
   $('main').innerHTML = `
-    <button class="back" onclick="openActId=null;render()">← BACK</button>
+    <button class="back" onclick="openActId=null;editingAct=false;render()">← BACK</button>
     <div class="head-card">
       <div class="head-row">
         <span class="code-badge" style="font-size:20px;padding:11px 18px">${esc(a.code)}</span>
         <h1>${esc(a.title)}</h1>
         <span class="doc-stamp">✔ APPROVED STANDARD</span>
         <button class="btn sm" onclick="window.print()">🖨️ PRINT / PDF</button>
-        ${me&&me.role==='admin'?`<button class="btn pink sm" id="aiBtn" onclick="genStandard('${a.id}')">✨ AI REWRITE</button>`:''}
+        ${isAdmin?`<button class="btn pink sm" id="aiBtn" onclick="genStandard('${a.id}')">✨ AI REWRITE</button>`:''}
+        ${isAdmin&&!editingAct?`<button class="btn sm" onclick="editingAct=true;render()">✏️ EDIT</button><button class="btn sm" onclick="deleteAct('${a.id}')">🗑️ DELETE</button>`:''}
       </div>
+      ${isAdmin&&editingAct ? actEditFormHTML(a) : `
       <div class="head-grid">
         <div>
           <div class="mini-head">🎯 PURPOSE</div>
@@ -1351,7 +1404,7 @@ function renderStandardDoc(a, points, people){
             <span class="fact">✔ Approved ${fmtDate(a.completed_at)}</span>
           </div>
         </div>
-      </div>
+      </div>`}
     </div>
     <div class="panel" id="aiPanel" style="display:none"><h3>📘 OFFICIAL STANDARD DOCUMENT</h3>
       <div id="aiDocWrap"></div>
@@ -1629,7 +1682,73 @@ async function addStaffDlg(){
   const {error}=await db.from('staff').insert({name:name.trim(), role:'member', email:(email||'').trim().toLowerCase()||null});
   if(error) return toast('Failed: '+error.message);
   const {data}=await db.from('staff').select('*').eq('active',true).order('created_at'); staff=data;
-  toast('👥 '+name.trim()+' added — now create their login in Supabase → Authentication'); render();
+  toast('👥 '+name.trim()+' added — now create their login in Supabase → Authentication');
+  if(view==='team') renderTeam(); else render();
+}
+
+/* ---------- manage team (admin) ---------- */
+async function renderTeam(){
+  if(!me || me.role!=='admin'){ view='dash'; return render(); }
+  $('main').innerHTML = backHome() + '<div class="spin">Loading team…</div>';
+  const {data,error} = await db.from('staff').select('*').order('created_at');
+  if(error){ $('main').innerHTML = backHome() + `<div class="empty"><p>Could not load team: ${esc(error.message)}</p></div>`; return; }
+  allStaff = data;
+  renderTeamList();
+}
+function teamRowHTML(s){
+  const isSelf = s.id===me.id;
+  if(teamEditId===s.id){
+    return `<div class="ro-item">
+      <input id="teamEditName" value="${esc(s.name)}" style="max-width:220px">
+      ${isSelf?`<span class="cat-chip">⚡ Admin (you)</span>`:`<select id="teamEditRole" style="max-width:150px;padding:8px 10px">
+        <option value="member" ${s.role==='member'?'selected':''}>Team member</option>
+        <option value="admin" ${s.role==='admin'?'selected':''}>Admin</option></select>`}
+      <button class="btn primary sm" onclick="saveStaffEdit('${s.id}')">💾 SAVE</button>
+      <button class="btn sm" onclick="teamEditId=null;renderTeamList()">CANCEL</button>
+    </div>`;
+  }
+  const inactive = s.active===false;
+  return `<div class="ro-item">
+    ${av(s.name)}<span class="ro-title" style="cursor:default">${esc(s.name)}${inactive?' <span class=\"soft\">(removed)</span>':''}</span>
+    <span class="cat-chip">${s.role==='admin'?'⚡ Admin':'Team member'}</span>
+    ${s.email?`<span class="cat-chip">${esc(s.email)}</span>`:'<span class="cat-chip">no login email set</span>'}
+    <span class="row-tools">
+      <button class="tool" title="Edit" onclick="teamEditId='${s.id}';renderTeamList()">✏️</button>
+      ${!isSelf?`<button class="tool" title="${inactive?'Reactivate':'Remove from team'}" onclick="toggleStaffActive('${s.id}')">${inactive?'♻️':'🗑️'}</button>`:''}
+    </span>
+  </div>`;
+}
+function renderTeamList(){
+  const active = allStaff.filter(s=>s.active!==false);
+  const inactive = allStaff.filter(s=>s.active===false);
+  $('main').innerHTML = backHome() + `
+    <div class="page-head"><div><span class="block-eyebrow">FETS OS</span><h1>MANAGE TEAM 👥</h1>
+    <p>Edit names and roles, or remove someone from the active team. Their past work log, data and standards stay exactly as they are.</p></div>
+    <div class="list-tools"><button class="btn primary" onclick="addStaffDlg()">＋ ADD STAFF MEMBER</button></div></div>
+    <div class="ro-list">${active.map(teamRowHTML).join('')}</div>
+    ${inactive.length?`<div><span class="section-label">🗄️ REMOVED FROM TEAM</span></div><div class="ro-list" style="opacity:.65">${inactive.map(teamRowHTML).join('')}</div>`:''}`;
+}
+async function saveStaffEdit(id){
+  const name=$('teamEditName').value.trim(); if(!name) return toast('Name required');
+  const roleSel=$('teamEditRole');
+  const patch={name}; if(roleSel) patch.role=roleSel.value;
+  const {error}=await db.from('staff').update(patch).eq('id',id);
+  if(error) return toast('Failed: '+error.message);
+  teamEditId=null;
+  await loadStaff();
+  const {data}=await db.from('staff').select('*').order('created_at'); allStaff=data||allStaff;
+  renderTeamList(); toast('💾 Saved!');
+}
+async function toggleStaffActive(id){
+  const s=allStaff.find(x=>x.id===id); if(!s) return;
+  const next = s.active===false;
+  if(!next && !confirm(`Remove ${s.name} from the active team? Their name stays on past work; they won't appear in pickers or assignment until reactivated.`)) return;
+  const {error}=await db.from('staff').update({active:next}).eq('id',id);
+  if(error) return toast('Failed: '+error.message);
+  await loadStaff();
+  const {data}=await db.from('staff').select('*').order('created_at'); allStaff=data||allStaff;
+  toast(next?('♻️ '+s.name+' reactivated'):('🗑️ '+s.name+' removed from active team'));
+  renderTeamList();
 }
 
 /* ---------- settings (Google Chat) ---------- */
