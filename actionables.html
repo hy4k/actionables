@@ -595,17 +595,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--pop-cyan);box-shadow:
 .hub-tile .progress-line{width:100%;margin-top:6px}
 .hub-tile.admin{background:#fff7fb;border-style:dashed}
 
-/* --- flow redesign: onboarding, mission, daily pulse --- */
-#onboardModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:60;background:rgba(17,17,17,.65);padding:16px;overflow-y:auto}
-.ob-card{background:var(--paper);border:3px solid var(--pop-ink);border-radius:24px;box-shadow:8px 8px 0 var(--pop-yellow),16px 16px 0 rgba(0,0,0,.25);max-width:640px;width:100%;padding:clamp(26px,4vw,44px)}
-.ob-card h2{font-family:'Bangers',cursive;font-weight:400;font-size:clamp(26px,4vw,38px);letter-spacing:.03em;text-align:center;color:var(--pop-ink)}
-.ob-card .ob-sub{text-align:center;font-weight:400;color:#666;margin:6px 0 22px}
-.ob-step{display:flex;gap:14px;align-items:flex-start;background:#fff;border:2px solid var(--pop-ink);border-radius:16px;padding:14px 18px;margin-bottom:12px}
-.ob-step:nth-child(odd){box-shadow:4px 4px 0 var(--pop-cyan)}
-.ob-step:nth-child(even){box-shadow:4px 4px 0 var(--pop-yellow)}
-.ob-step .ob-ico{font-size:30px;line-height:1.2}
-.ob-step b{font-family:'Bangers',cursive;font-weight:400;font-size:17px;letter-spacing:.05em;display:block;color:var(--pop-ink)}
-.ob-step p{font-size:13.5px;font-weight:400;color:#555;margin-top:2px}
+/* --- flow redesign: mission, daily pulse --- */
 .mission{background:#fff;border:2px solid var(--pop-ink);border-radius:22px;padding:26px 30px;box-shadow:6px 6px 0 var(--pop-yellow);margin-bottom:36px}
 .mission p{font-size:14px;font-weight:400;color:#555;margin-top:6px;max-width:680px}
 .pulse{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px}
@@ -615,6 +605,42 @@ input:focus,textarea:focus,select:focus{border-color:var(--pop-cyan);box-shadow:
 .nudge.done{background:var(--pop-green);color:#0a3d1f}
 .how-link{font-family:'Bangers',cursive;font-size:14px;letter-spacing:.05em;color:var(--pop-pink);cursor:pointer;background:none;border:none;padding:0}
 .how-link:hover{text-decoration:underline wavy}
+
+/* --- detail redesign: idea flow, step timeline, data slots, start gate --- */
+.idea-flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px}
+.idea-node{flex:1 1 200px;min-width:180px;max-width:340px;background:#fff;border:2px solid var(--pop-ink);border-radius:16px;padding:14px 16px;font-size:14px;font-weight:400;color:#444}
+.idea-flow .idea-node:nth-of-type(3n+1){box-shadow:4px 4px 0 var(--pop-cyan)}
+.idea-flow .idea-node:nth-of-type(3n+2){box-shadow:4px 4px 0 var(--pop-yellow)}
+.idea-flow .idea-node:nth-of-type(3n){box-shadow:4px 4px 0 var(--pop-violet)}
+.idea-node .in-no{font-family:'Bangers',cursive;font-size:12.5px;color:var(--pop-pink);letter-spacing:.08em;display:block;margin-bottom:4px}
+.idea-arrow{align-self:center;font-family:'Bangers',cursive;font-size:24px;color:var(--pop-pink);flex-shrink:0}
+.flow-steps{margin-top:6px}
+.fstep{position:relative;padding:0 0 26px 60px}
+.fstep::before{content:'';position:absolute;left:19px;top:44px;bottom:2px;border-left:3px dashed rgba(20,27,46,.25)}
+.fstep:last-child{padding-bottom:4px}
+.fstep:last-child::before{display:none}
+.fstep .fs-no{position:absolute;left:0;top:0;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-family:'Bangers',cursive;font-size:19px;background:var(--pop-yellow);border:2px solid var(--pop-ink);border-radius:50% 40% 55% 45%;box-shadow:2px 2px 0 var(--pop-ink)}
+.fstep .fs-card{background:#fff;border:2px solid var(--pop-ink);border-radius:14px;padding:12px 16px;box-shadow:3px 3px 0 rgba(20,27,46,.12);font-size:14.5px;white-space:pre-wrap}
+.fstep .fs-meta{font-family:'DM Sans',sans-serif;font-size:11px;color:#999;margin-top:6px}
+.slot-row{padding:18px 0;border-bottom:2px dashed #e5e0d0}
+.slot-row:first-child{padding-top:4px}
+.slot-row:last-child{border-bottom:0}
+.slot-field{font-family:'Bangers',cursive;font-size:17px;letter-spacing:.04em;margin-bottom:10px;color:var(--pop-ink)}
+.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.slot{border:2px dashed var(--studio-line);border-radius:14px;padding:11px 14px;background:#fafbf7;min-height:62px}
+.slot.filled{border:2px solid var(--pop-ink);background:#fff;box-shadow:3px 3px 0 rgba(51,209,122,.4)}
+.slot .sc{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a93a5;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.slot .sv{font-size:13.5px;font-weight:400;color:#333;margin-top:6px}
+.slot .fill-btn{margin-top:8px}
+#startOverlay{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;background:rgba(17,17,17,.62);padding:16px}
+.start-card{background:var(--paper);border:3px solid var(--pop-ink);border-radius:24px;box-shadow:8px 8px 0 var(--pop-yellow),16px 16px 0 rgba(0,0,0,.3);padding:clamp(30px,5vw,52px);text-align:center;max-width:560px;width:100%}
+.start-card h2{font-family:'Bangers',cursive;font-weight:400;font-size:clamp(26px,4vw,38px);letter-spacing:.03em;margin:14px 0 8px;color:var(--pop-ink)}
+.start-card p{font-weight:400;color:#666;font-size:14px;max-width:400px;margin:0 auto 26px}
+.btn.mega{font-size:24px;padding:18px 40px;background:var(--pop-green);color:#0a3d1f;box-shadow:4px 4px 0 var(--pop-cyan),8px 8px 0 var(--pop-ink)}
+.finish-bar{margin-top:44px;background:#fff;border:2px solid var(--pop-ink);border-radius:22px;padding:34px 30px;box-shadow:6px 6px 0 var(--pop-violet);text-align:center}
+.finish-bar p{font-weight:400;color:#666;font-size:14px;margin-bottom:18px}
+.locked-note{background:#FFF7CC;border:2px dashed var(--pop-ink);border-radius:14px;padding:12px 18px;font-size:13.5px;font-weight:400;color:#6b5b1e}
+.panel + .panel{margin-top:30px}
 </style>
 </head>
 <body>
@@ -632,17 +658,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--pop-cyan);box-shadow:
       <input id="loginPass" type="password" autocomplete="current-password" required placeholder="••••••••">
       <button class="btn primary" id="loginBtn" type="submit" style="margin-top:24px;width:100%;justify-content:center">🔓 SIGN IN</button>
     </form>
-  </div>
-</div>
-
-<div id="onboardModal">
-  <div class="ob-card">
-    <h2>WELCOME TO FETS ACTIONABLES! ⚡</h2>
-    <p class="ob-sub">Two minutes to understand the whole thing:</p>
-    <div class="ob-step"><span class="ob-ico">🎯</span><div><b>1 · YOU GET ACTIONABLES</b><p>Real tasks — like "collect every internet bill" or "list all client site codes". Open yours, follow the steps, post updates, and add the information you collect.</p></div></div>
-    <div class="ob-step"><span class="ob-ico">📘</span><div><b>2 · FINISHED WORK BECOMES A STANDARD</b><p>When your task is approved, it becomes a permanent page in the <b>FETS Rulebook</b> — the official record of how our test centres run. Written by you, used forever.</p></div></div>
-    <div class="ob-step"><span class="ob-ico">🏆</span><div><b>3 · THE TEAM MISSION</b><p>When the rulebook hits its target, FETS is ready to open its next centre — built directly on this team's work. Post an update every day, even a small one. That's how the bar moves.</p></div></div>
-    <button class="btn primary" style="width:100%;justify-content:center;margin-top:16px" onclick="dismissOnboard()">GOT IT — LET'S GO! 🚀</button>
   </div>
 </div>
 
@@ -903,8 +918,6 @@ function renderActs(){
 /* ---------- dashboard = the menu (hub tiles) ---------- */
 const isToday = d => new Date(d).toDateString() === new Date().toDateString();
 const postedToday = name => acts.some(a=>a.actionable_updates.some(u=>u.kind!=='instruction' && u.staff && u.staff.name===name && isToday(u.created_at)));
-function showOnboard(){ $('onboardModal').style.display='flex'; }
-function dismissOnboard(){ localStorage.setItem('fets_onboarded','1'); $('onboardModal').style.display='none'; }
 function renderDash(){
   const live=acts.filter(a=>a.status!=='completed');
   const submitted=acts.filter(a=>a.status==='submitted');
@@ -947,7 +960,7 @@ function renderDash(){
 
   $('main').innerHTML = `
     <div class="hub-welcome"><h1>HEY ${esc(firstName.toUpperCase())}! ⚡</h1>
-      <p>This is where FETS writes its rulebook — one task at a time. <button class="how-link" onclick="showOnboard()">❓ how this works</button></p></div>
+      <p>This is where FETS writes its rulebook — one task at a time.</p></div>
     ${myWork}
     ${mission}
     <div class="hub-grid">
@@ -1326,25 +1339,17 @@ function renderDetail(){
 
   if(!open) return renderStandardDoc(a, points, people);
 
-  let btns = '';
-  if(open){
-    if(canManage && a.status==='pending') btns += `<button class="btn primary" onclick="setStatus('${a.id}','in_progress','started work')">▶ START WORK!</button>`;
-    if(canManage && a.status==='in_progress') btns += `<button class="btn primary" onclick="submitAct('${a.id}')">📤 SUBMIT AS FINISHED</button>`;
-    if(isAdmin && a.status==='submitted'){
-      btns += `<button class="btn green" onclick="approveAct('${a.id}')">✔ APPROVE → LIBRARY</button>`;
-      btns += `<button class="btn" onclick="setStatus('${a.id}','in_progress','sent it back for more work')">↩ SEND BACK</button>`;
-    }
-    if(canEditAct && !editingAct){
-      btns += `<button class="btn sm" onclick="editingAct=true;render()">✏️ EDIT</button>`;
-      btns += `<button class="btn sm" onclick="deleteAct('${a.id}')">🗑️ DELETE</button>`;
-    }
-  }
+  const started = a.status!=='pending';
+  const showStart = !started && canManage && !startDismissed[a.id];
+
+  const ideaHTML = points.length
+    ? points.map((p,i)=>`<div class="idea-node"><span class="in-no">IDEA ${i+1}</span>${esc(p)}</div>`).join('<span class="idea-arrow">→</span>')
+    : '<p class="soft">No brief yet.</p>';
 
   const stepsHTML = steps.length ? steps.map((u,i)=>`
-    <div class="step"><span class="step-no">${i+1}</span>
-      <div class="step-body"><div class="msg">${esc(u.message)}</div>
-        <div class="step-meta">${esc(u.staff?.name||'')} · ${ago(u.created_at)}</div></div></div>`).join('')
-    : `<p class="soft">No steps yet.${isAdmin?' Break this task into steps below 👇':''}</p>`;
+    <div class="fstep"><span class="fs-no">${i+1}</span>
+      <div class="fs-card">${esc(u.message)}<div class="fs-meta">${esc(u.staff?.name||'')} · ${ago(u.created_at)}</div></div></div>`).join('')
+    : `<p class="soft">No steps yet.${isAdmin?' Add the first one below 👇':''}</p>`;
 
   const logHTML = log.map(u=>`
     <div class="feed-item ${u.kind==='submission'?'submission':''}">${av(u.staff?.name||'?',true)}
@@ -1352,74 +1357,97 @@ function renderDetail(){
         ${u.kind==='submission'?'<span class="tag">📤 SUBMITTED</span>':''}
         <span class="when">${ago(u.created_at)}</span></div>
         <div class="msg">${esc(u.message)}</div></div></div>`).join('')
-    || '<p class="soft">Nothing logged yet. Be the first!</p>';
+    || '<p class="soft">Nothing here yet.</p>';
+
+  // the page ends with the one action that matters right now
+  let finishBar = '';
+  if(canManage && a.status==='in_progress')
+    finishBar = `<div class="finish-bar"><p>Collected everything and posted your updates?</p>
+      <button class="btn primary" style="font-size:20px;padding:15px 32px" onclick="submitAct('${a.id}')">📤 SUBMIT AS FINISHED</button></div>`;
+  else if(isAdmin && a.status==='submitted')
+    finishBar = `<div class="finish-bar"><p>The team says this is done. Review the data above, then:</p>
+      <button class="btn green" style="font-size:19px;padding:14px 28px" onclick="approveAct('${a.id}')">✔ APPROVE → RULEBOOK</button>
+      <button class="btn" style="margin-left:12px" onclick="setStatus('${a.id}','in_progress','sent it back for more work')">↩ SEND BACK</button></div>`;
+  else if(a.status==='submitted')
+    finishBar = `<div class="finish-bar"><p>📬 Submitted — waiting for Midhun's review.</p></div>`;
 
   $('main').innerHTML = `
     <button class="back" onclick="openActId=null;editingAct=false;render()">← BACK</button>
+
+    ${!started&&canManage&&startDismissed[a.id]?`<div class="finish-bar" style="margin:0 0 30px;box-shadow:6px 6px 0 var(--pop-green)">
+      <p>This task hasn't started yet — everything below is locked until it does.</p>
+      <button class="btn mega" onclick="setStatus('${a.id}','in_progress','started work')">▶ START WORK!</button>
+    </div>`:''}
 
     <div class="head-card">
       <div class="head-row">
         <span class="code-badge" style="font-size:20px;padding:11px 18px">${esc(a.code)}</span>
         <h1>${esc(a.title)}</h1>
         <span class="pill ${a.status}">${STATUS_LABEL[a.status]}</span>
-        ${btns}
+        ${canEditAct&&!editingAct?`<span class="row-tools"><button class="tool" title="Edit" onclick="editingAct=true;render()">✏️</button><button class="tool" title="Delete" onclick="deleteAct('${a.id}')">🗑️</button></span>`:''}
       </div>
       ${canEditAct&&editingAct ? actEditFormHTML(a) : `
-      <div class="head-grid">
-        <div>
-          <div class="mini-head">🎯 WHAT'S THIS FOR?</div>
-          <ul class="points">${points.map(p=>`<li>${esc(p)}</li>`).join('')||'<li class="soft">No description yet.</li>'}</ul>
-        </div>
-        <div>
-          <div class="mini-head">👥 TEAM ON IT</div>
-          <div class="team-chips">
-            ${people.map(p=>`<span class="team-chip">${av(p.staff.name,true)}${esc(p.staff.name)}${p.member_role==='lead'?'<span class="lead-tag">LEAD</span>':''}${canEditAct&&open?`<button class="tool" style="margin-left:2px" title="Remove from actionable" onclick="removeMember('${p.id}','${a.id}')">✕</button>`:''}</span>`).join('')||'<span class="soft">Nobody assigned yet.</span>'}
-            ${canEditAct&&open?`<select id="addMemberSel" style="width:auto;padding:6px 10px;font-size:13px">${staff.filter(s=>!people.some(p=>p.staff.id===s.id)).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select>
-            <button class="btn sm" onclick="addMember('${a.id}')">＋ ADD</button>`:''}
-          </div>
-          <div class="facts">
-            <span class="fact">📅 Created ${fmtDate(a.created_at)}</span>
-            <span class="fact">⏰ Due ${fmtDate(a.due_date)}</span>
-            ${a.completed_at?`<span class="fact">✔ Done ${fmtDate(a.completed_at)}</span>`:''}
-            <span class="fact">💬 ${a.actionable_updates.length} posts</span>
-          </div>
-        </div>
+      <div class="facts" style="margin-top:16px">
+        <span class="fact">⏰ Due ${fmtDate(a.due_date)}</span>
+        <span class="fact">💬 ${a.actionable_updates.length} posts</span>
+        <span class="fact">📅 ${fmtDate(a.created_at)}</span>
       </div>
       <div class="workflow-progress">
-        ${['Brief ready','Work in progress','Submitted for review','In the library'].map((label,i)=>`<div class="workflow-stage ${i<stageIndex?'done':i===stageIndex?'current':''}">${String(i+1).padStart(2,'0')} · ${label}</div>`).join('')}
+        ${['Brief ready','Work in progress','Submitted for review','In the rulebook'].map((label,i)=>`<div class="workflow-stage ${i<stageIndex?'done':i===stageIndex?'current':''}">${String(i+1).padStart(2,'0')} · ${label}</div>`).join('')}
       </div>`}
     </div>
 
-    <div class="panel"><h3>📌 INSTRUCTIONS — STEP BY STEP</h3>
-      <div class="steps-list">${stepsHTML}</div>
-      ${isAdmin&&open?`<div class="composer">
-        <textarea id="stepBox" placeholder="Write the next step of the procedure…"></textarea>
+    <div class="panel"><h3>🎯 WHAT'S THIS FOR?</h3>
+      <div class="idea-flow">${ideaHTML}</div>
+    </div>
+
+    <div class="panel"><h3>👥 TEAM ON IT</h3>
+      <div class="team-chips">
+        ${people.map(p=>`<span class="team-chip">${av(p.staff.name,true)}${esc(p.staff.name)}${p.member_role==='lead'?'<span class="lead-tag">LEAD</span>':''}${canEditAct?`<button class="tool" style="margin-left:2px" title="Remove" onclick="removeMember('${p.id}','${a.id}')">✕</button>`:''}</span>`).join('')||'<span class="soft">Nobody assigned yet.</span>'}
+        ${canEditAct?`<select id="addMemberSel" style="width:auto;padding:6px 10px;font-size:13px">${staff.filter(s=>!people.some(p=>p.staff.id===s.id)).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select>
+        <button class="btn sm" onclick="addMember('${a.id}')">＋ ADD</button>`:''}
+      </div>
+    </div>
+
+    <div class="panel"><h3>📌 STEP BY STEP</h3>
+      <div class="flow-steps">${stepsHTML}</div>
+      ${isAdmin?`<div class="composer">
+        <textarea id="stepBox" placeholder="Next step of the procedure…"></textarea>
         <button class="btn primary sm" style="align-self:flex-start" onclick="postUpdate('${a.id}','instruction','stepBox')">＋ ADD STEP</button></div>`:''}
     </div>
 
-    <div class="panel" style="margin-top:26px"><h3>🔨 WORK LOG</h3>
-      <div class="feed" id="feed">${logHTML}</div>
-      ${open?`<div class="composer">
-        <textarea id="msgBox" placeholder="What did you work on? What's blocking you?"></textarea>
-        <button class="btn primary sm" style="align-self:flex-start" onclick="postUpdate('${a.id}','update','msgBox')">POST!</button></div>`:''}
+    <div class="panel"><h3>🗂️ DATA TO COLLECT</h3>
+      ${started?'':'<div class="locked-note">🔒 Unlocks when someone hits START WORK.</div>'}
+      <div class="data-list" id="dataList"><p class="soft">Loading…</p></div>
     </div>
 
-    <div class="detail-grid" style="margin-top:26px;grid-template-columns:1.2fr 1fr">
-      <div class="panel" style="margin-top:0"><h3>🗂️ COLLECTED DATA</h3>
-        <div class="data-list" id="dataList"><p class="soft">Loading…</p></div>
-        ${canManage?`<div class="inline-add" style="flex-direction:column;gap:8px">
-          <input id="dLabel" placeholder="Label — e.g. Calicut Centre · Internet (Asianet)">
-          <textarea id="dContent" style="height:64px;border-radius:14px" placeholder="Details — account no, provider, monthly amount, due date…"></textarea>
-          <button class="btn sm" style="align-self:flex-start" onclick="addData('${a.id}')">＋ ADD ENTRY</button></div>`:''}
+    <div class="panel"><h3>📎 FILES</h3>
+      <div id="fileList"><p class="soft">Loading…</p></div>
+      ${canManage&&started?`<div class="inline-add">
+        <input type="file" id="fileInp" style="padding:9px 12px">
+        <button class="btn pink sm" id="upBtn" onclick="uploadFile('${a.id}')">⬆ UPLOAD</button></div>
+        <p class="hint">Up to 50 MB.</p>`:''}
+    </div>
+
+    <div class="panel"><h3>🔨 WORK LOG</h3>
+      <div class="feed" id="feed">${logHTML}</div>
+      ${started?`<div class="composer">
+        <textarea id="msgBox" placeholder="What did you work on? What's blocking you?"></textarea>
+        <button class="btn primary sm" style="align-self:flex-start" onclick="postUpdate('${a.id}','update','msgBox')">POST!</button></div>`
+      :'<div class="locked-note" style="margin-top:14px">🔒 The conversation opens when someone hits START WORK.</div>'}
+    </div>
+
+    ${finishBar}
+
+    ${showStart?`<div id="startOverlay">
+      <div class="start-card">
+        <span class="code-badge" style="font-size:16px">${esc(a.code)}</span>
+        <h2>${esc(a.title)}</h2>
+        <p>You're on this task. Everything unlocks the moment you start — and your start gets posted to the work log for the whole team.</p>
+        <button class="btn mega" onclick="setStatus('${a.id}','in_progress','started work')">▶ START WORK!</button>
+        <div style="margin-top:18px"><button class="how-link" onclick="startDismissed['${a.id}']=true;render()">👀 just looking for now</button></div>
       </div>
-      <div class="panel" style="margin-top:0"><h3>📎 FILES</h3>
-        <div id="fileList"><p class="soft">Loading…</p></div>
-        ${canManage?`<div class="inline-add">
-          <input type="file" id="fileInp" style="padding:9px 12px">
-          <button class="btn pink sm" id="upBtn" onclick="uploadFile('${a.id}')">⬆ UPLOAD</button></div>
-          <p class="hint">Excel sheets, PDFs, photos of bills — anything up to 50 MB.</p>`:''}
-      </div>
-    </div>`;
+    </div>`:''}`;
   const f=$('feed'); if(f) f.scrollTop=f.scrollHeight;
   loadData(a.id); loadFiles(a.id);
 }
@@ -1547,6 +1575,7 @@ async function genStandard(actId){
 }
 
 let dataRows = [], fileRows = [];
+let dataFields = [], fieldsRowId = null, editingSlot = null, startDismissed = {};
 const canManageAct = actId => {
   const a = acts.find(x=>x.id===actId);
   return !!me && !!a && (mine(a) || me.role==='admin');
@@ -1572,10 +1601,94 @@ function dataRowHTML(d, canManage){
 async function loadData(actId){
   const {data} = await db.from('actionable_data').select('*, staff(name)').eq('actionable_id',actId).order('created_at');
   const el=$('dataList'); if(!el) return;
-  dataRows = (data||[]).filter(d=>!d.label.startsWith('__'));
-  const cm = canManageAct(actId);
-  el.innerHTML = dataRows.length ? dataRows.map(d=>dataRowHTML(d,cm)).join('')
-    : '<p class="soft">No data entries yet. The assigned team adds collected information here.</p>';
+  const all = data||[];
+  const fRow = all.find(d=>d.label==='__fields');
+  fieldsRowId = fRow ? fRow.id : null;
+  try{ dataFields = fRow ? (JSON.parse(dTxt(fRow))||[]) : []; }catch(e){ dataFields = []; }
+  dataRows = all.filter(d=>!d.label.startsWith('__'));
+  renderDataPanel(actId);
+}
+// the admin-defined columns become fill-in slots, one per centre
+function slotCentres(){
+  const live = (centres||[]).filter(c=>c.status==='live').map(c=>c.name);
+  return live.length ? live : ['Cochin Centre','Calicut Centre'];
+}
+function renderDataPanel(actId){
+  const el=$('dataList'); if(!el) return;
+  const a = acts.find(x=>x.id===actId);
+  const started = a && a.status!=='pending';
+  const open = a && a.status!=='completed';
+  const cm = canManageAct(actId) && started && open;
+  const isAdmin = !!me && me.role==='admin';
+  const cList = slotCentres();
+  const claimed = new Set();
+  const gridHTML = dataFields.map(field=>{
+    const slots = cList.map(centre=>{
+      const label = `${centre} · ${field}`;
+      const row = dataRows.find(d=>d.label===label);
+      if(row) claimed.add(row.id);
+      const isEditing = editingSlot && editingSlot.field===field && editingSlot.centre===centre;
+      if(isEditing) return `<div class="slot filled"><div class="sc">${esc(centre)}</div>
+        <textarea id="slotTa" style="height:96px;margin-top:8px;border-radius:12px">${esc(editingSlot.value||'')}</textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn primary sm" onclick="saveSlot('${actId}')">💾 SAVE</button>
+          <button class="btn sm" onclick="editingSlot=null;renderDataPanel('${actId}')">CANCEL</button></div></div>`;
+      if(row) return `<div class="slot filled"><div class="sc">${esc(centre)} ✓
+          ${cm?`<span class="row-tools"><button class="tool" onclick='fillSlot("${actId}",${JSON.stringify(field)},${JSON.stringify(centre)},"${row.id}")'>✏️</button><button class="tool" onclick="delData('${row.id}')">🗑️</button></span>`:''}</div>
+        <div class="sv">${richLines(dTxt(row))}</div></div>`;
+      return `<div class="slot"><div class="sc">${esc(centre)}</div>
+        ${cm?`<button class="btn sm fill-btn" onclick='fillSlot("${actId}",${JSON.stringify(field)},${JSON.stringify(centre)},null)'>✍ FILL</button>`:`<div class="sv soft">— not filled yet</div>`}</div>`;
+    }).join('');
+    return `<div class="slot-row"><div class="slot-field">📍 ${esc(field)}</div><div class="slots">${slots}</div></div>`;
+  }).join('');
+  const extras = dataRows.filter(d=>!claimed.has(d.id));
+  el.innerHTML = `
+    ${dataFields.length ? gridHTML : '<p class="soft">No columns defined yet.'+(isAdmin?' Add them below 👇':' Midhun defines what to collect here.')+'</p>'}
+    ${extras.length?`<div style="margin-top:20px"><div class="mini-head" style="margin-bottom:10px">EXTRA ENTRIES</div>${extras.map(d=>dataRowHTML(d, cm)).join('')}</div>`:''}
+    ${cm?`<details style="margin-top:18px"><summary class="how-link">＋ add something outside the columns</summary>
+      <div class="inline-add" style="flex-direction:column;gap:8px;margin-top:10px">
+        <input id="dLabel" placeholder="Label — e.g. Calicut Centre · Internet (Asianet)">
+        <textarea id="dContent" style="height:64px;border-radius:14px" placeholder="Details…"></textarea>
+        <button class="btn sm" style="align-self:flex-start" onclick="addData('${actId}')">＋ ADD ENTRY</button></div></details>`:''}
+    ${isAdmin&&open?`<details style="margin-top:14px"><summary class="how-link">✏️ edit columns (admin)</summary>
+      <div class="team-chips" style="margin-top:12px">${dataFields.map((f,i)=>`<span class="team-chip">${esc(f)}<button class="tool" style="margin-left:4px" onclick="removeFieldCol('${actId}',${i})">✕</button></span>`).join('')||'<span class="soft">none yet</span>'}</div>
+      <div class="inline-add" style="margin-top:10px"><input id="fieldInput" placeholder="e.g. Connection ID" onkeydown="if(event.key==='Enter'){event.preventDefault();addFieldCol('${actId}');}"><button class="btn sm" onclick="addFieldCol('${actId}')">＋ ADD COLUMN</button></div></details>`:''}`;
+}
+function fillSlot(actId, field, centre, rowId){
+  const row = rowId ? dataRows.find(d=>d.id===rowId) : null;
+  editingSlot = {field, centre, rowId, value: row?dTxt(row):''};
+  renderDataPanel(actId);
+  const ta=$('slotTa'); if(ta) ta.focus();
+}
+async function saveSlot(actId){
+  const v=$('slotTa').value.trim(); if(!v) return toast('Type the details first');
+  const {field, centre, rowId} = editingSlot;
+  const q = rowId
+    ? db.from('actionable_data').update({content:{text:v}, updated_at:new Date().toISOString()}).eq('id',rowId)
+    : db.from('actionable_data').insert({actionable_id:actId, staff_id:me.id, label:`${centre} · ${field}`, content:{text:v}});
+  const {error} = await q;
+  if(error) return toast('Failed: '+error.message);
+  editingSlot=null; loadData(actId); toast('🗂️ Saved!');
+}
+async function saveFieldCols(actId){
+  const q = fieldsRowId
+    ? db.from('actionable_data').update({content:{text:JSON.stringify(dataFields)}, updated_at:new Date().toISOString()}).eq('id',fieldsRowId)
+    : db.from('actionable_data').insert({actionable_id:actId, staff_id:me.id, label:'__fields', content:{text:JSON.stringify(dataFields)}});
+  const {error} = await q;
+  if(error) return toast('Failed: '+error.message);
+  loadData(actId);
+}
+function addFieldCol(actId){
+  if(!me || me.role!=='admin') return toast('Admin access only');
+  const v=$('fieldInput').value.trim(); if(!v) return;
+  if(!dataFields.includes(v)) dataFields.push(v);
+  saveFieldCols(actId); toast('📍 Column added');
+}
+function removeFieldCol(actId, i){
+  if(!me || me.role!=='admin') return toast('Admin access only');
+  if(!confirm(`Remove the column "${dataFields[i]}"? Already-filled entries stay as extra entries.`)) return;
+  dataFields.splice(i,1);
+  saveFieldCols(actId);
 }
 function editData(id){
   const d=dataRows.find(x=>x.id===id); const row=$('dr-'+id); if(!d||!row) return;
@@ -1682,12 +1795,23 @@ function nextCode(){
   const n = acts.map(a=>parseInt((a.code||'').replace(/\D/g,''),10)).filter(x=>!isNaN(x));
   return 'ACT-' + String((n.length?Math.max(...n):0)+1).padStart(2,'0');
 }
-let aiSteps = null;
+let aiSteps = null, draftCols = [];
+function renderColChips(){
+  const el=$('colChips'); if(!el) return;
+  el.innerHTML = draftCols.length
+    ? draftCols.map((c,i)=>`<span class="team-chip">📍 ${esc(c)}<button class="tool" style="margin-left:4px" onclick="draftCols.splice(${i},1);renderColChips()">✕</button></span>`).join('')
+    : '<span class="soft">no columns yet — add the fields staff must fill</span>';
+}
+function addDraftCol(){
+  const v=$('colInput').value.trim(); if(!v) return;
+  if(!draftCols.includes(v)) draftCols.push(v);
+  $('colInput').value=''; renderColChips();
+}
 function renderAssign(){
   if(!me || me.role!=='admin'){
     view='dash'; return render();
   }
-  aiSteps = null;
+  aiSteps = null; draftCols = [];
   $('main').innerHTML = backHome() + `
     <div class="page-head"><h1>ASSIGN A NEW ACTIONABLE ✨</h1><p>Type just the rough idea — AI can expand it into the full brief and step-by-step procedure.</p></div>
     <div class="form-card">
@@ -1697,6 +1821,10 @@ function renderAssign(){
         <span class="hint" style="display:inline-block;margin-left:10px">writes the purpose & steps for you — review before creating</span></div>
       <div id="aiStepsPrev"></div>
       <label>WHAT'S THIS FOR? — POINT-WISE</label><textarea id="fDesc" style="height:110px;border-radius:16px" placeholder="2–3 short points, ONE PER LINE, e.g.:&#10;Track all vendor contracts for both centres.&#10;Covers AMC, housekeeping and security agencies.&#10;Phase 1: contact details and renewal dates."></textarea>
+      <label>DATA TO COLLECT — THE COLUMNS STAFF FILL IN</label>
+      <div class="team-chips" id="colChips" style="margin-bottom:8px"></div>
+      <div class="inline-add" style="margin-top:0"><input id="colInput" placeholder="e.g. Connection ID — then ADD" onkeydown="if(event.key==='Enter'){event.preventDefault();addDraftCol();}"><button class="btn sm" onclick="addDraftCol()">＋ ADD</button></div>
+      <p class="hint">Each column becomes a fill-in slot per centre. AI EXPAND suggests these too.</p>
       <label>DUE DATE (OPTIONAL)</label><input type="date" id="fDue">
       <label>ASSIGN TEAM MEMBERS</label>
       <div id="fStaff">${staff.map(s=>`
@@ -1711,6 +1839,7 @@ function renderAssign(){
       </div>
     </div>
     <div style="margin-top:26px"><button class="btn sm" onclick="addStaffDlg()">＋ ADD STAFF MEMBER</button></div>`;
+  renderColChips();
 }
 async function createAct(){
   if(!me || me.role!=='admin') return toast('Admin access only');
@@ -1731,6 +1860,10 @@ async function createAct(){
       await db.from('actionable_updates').insert({actionable_id:data.id, staff_id:me.id, kind:'instruction', message:s});
     aiSteps=null;
   }
+  if(draftCols.length){
+    await db.from('actionable_data').insert({actionable_id:data.id, staff_id:me.id, label:'__fields', content:{text:JSON.stringify(draftCols)}});
+    draftCols=[];
+  }
   await loadActs(); toast('🎉 '+code+' created!'); openActId=data.id; render();
 }
 // AI: expand a rough title into a full brief + step-by-step procedure
@@ -1745,7 +1878,7 @@ async function aiExpandTask(){
   }
   const btn=$('aiExpandBtn'); btn.disabled=true; btn.textContent='✨ WRITING…';
   const seed=$('fDesc').value.trim();
-  const ask = `You are the operations lead for FETS (Forun Testing & Educational Services), which runs Prometric/Pearson-VUE-style computer-based test centres in Cochin and Calicut, India, and is writing operating standards to open its next centre. A task ("actionable") will be assigned to a staff member. Expand this rough idea into a complete task.\n\nTITLE: ${title}\n${seed?`ROUGH NOTES: ${seed}\n`:''}\nReturn ONLY valid JSON, exactly this shape:\n{"purpose":["2-4 short one-line points explaining what this task is for and why it matters"],"steps":["3-7 concrete numbered steps the staff member should follow, each specific and practical"]}\nRules: where the task involves collecting information, one step must remind them to log each entry with a label like "<Centre> · <Item>" (e.g. "Cochin Centre · Internet — Airtel") so it lands in the comparison table; keep language simple and friendly; no markdown, no extra keys.`;
+  const ask = `You are the operations lead for FETS (Forun Testing & Educational Services), which runs Prometric/Pearson-VUE-style computer-based test centres in Cochin and Calicut, India, and is writing operating standards to open its next centre. A task ("actionable") will be assigned to a staff member. Expand this rough idea into a complete task.\n\nTITLE: ${title}\n${seed?`ROUGH NOTES: ${seed}\n`:''}\nReturn ONLY valid JSON, exactly this shape:\n{"purpose":["2-4 short one-line points explaining what this task is for and why it matters"],"steps":["3-7 concrete numbered steps the staff member should follow, each specific and practical"],"columns":["3-8 short field names for the data staff must collect, e.g. Provider name, Account number, Monthly cost, Renewal date"]}\nRules: columns are the fill-in fields staff complete once per centre — keep each 1-4 words; keep language simple and friendly; no markdown, no extra keys.`;
   try{
     const res = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
@@ -1758,8 +1891,9 @@ async function aiExpandTask(){
     const d = JSON.parse(text);
     $('fDesc').value = (d.purpose||[]).join('\n');
     aiSteps = (d.steps||[]).map(s=>String(s)).filter(Boolean);
+    if(d.columns && d.columns.length){ draftCols = [...new Set(d.columns.map(c=>String(c).trim()).filter(Boolean))]; renderColChips(); }
     $('aiStepsPrev').innerHTML = aiSteps.length ? `<div class="steps" style="margin-top:14px"><b>📌 ${aiSteps.length} steps will be added automatically when you create:</b><br>${aiSteps.map((s,i)=>`${i+1}. ${esc(s)}`).join('<br>')}</div>` : '';
-    toast('✨ Task expanded — review, pick the team, hit CREATE');
+    toast('✨ Task expanded — review the brief, steps & columns');
   }catch(e){
     if(/authentication|invalid.*key|401/i.test(e.message)){ localStorage.removeItem('fets_anthropic_key'); toast('❌ API key rejected — try again with a valid key'); }
     else toast('AI failed: '+e.message);
@@ -1912,7 +2046,6 @@ async function enterApp(session){
   await loadRollout(); await loadCompliance(); updateCounts();
   runComplianceEngine();
   go('dash');
-  if(!localStorage.getItem('fets_onboarded')) showOnboard();
 }
 (async function(){
   $('loginForm').onsubmit = doLogin;
