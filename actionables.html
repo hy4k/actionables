@@ -594,6 +594,27 @@ input:focus,textarea:focus,select:focus{border-color:var(--pop-cyan);box-shadow:
 .hub-tile .ht-count{position:absolute;top:16px;right:18px;font-family:'Bangers',cursive;font-size:15px;letter-spacing:.05em;background:var(--pop-pink);color:#fff;border:2px solid var(--pop-ink);border-radius:99px;padding:3px 12px;box-shadow:2px 2px 0 var(--pop-ink)}
 .hub-tile .progress-line{width:100%;margin-top:6px}
 .hub-tile.admin{background:#fff7fb;border-style:dashed}
+
+/* --- flow redesign: onboarding, mission, daily pulse --- */
+#onboardModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:60;background:rgba(17,17,17,.65);padding:16px;overflow-y:auto}
+.ob-card{background:var(--paper);border:3px solid var(--pop-ink);border-radius:24px;box-shadow:8px 8px 0 var(--pop-yellow),16px 16px 0 rgba(0,0,0,.25);max-width:640px;width:100%;padding:clamp(26px,4vw,44px)}
+.ob-card h2{font-family:'Bangers',cursive;font-weight:400;font-size:clamp(26px,4vw,38px);letter-spacing:.03em;text-align:center;color:var(--pop-ink)}
+.ob-card .ob-sub{text-align:center;font-weight:400;color:#666;margin:6px 0 22px}
+.ob-step{display:flex;gap:14px;align-items:flex-start;background:#fff;border:2px solid var(--pop-ink);border-radius:16px;padding:14px 18px;margin-bottom:12px}
+.ob-step:nth-child(odd){box-shadow:4px 4px 0 var(--pop-cyan)}
+.ob-step:nth-child(even){box-shadow:4px 4px 0 var(--pop-yellow)}
+.ob-step .ob-ico{font-size:30px;line-height:1.2}
+.ob-step b{font-family:'Bangers',cursive;font-weight:400;font-size:17px;letter-spacing:.05em;display:block;color:var(--pop-ink)}
+.ob-step p{font-size:13.5px;font-weight:400;color:#555;margin-top:2px}
+.mission{background:#fff;border:2px solid var(--pop-ink);border-radius:22px;padding:26px 30px;box-shadow:6px 6px 0 var(--pop-yellow);margin-bottom:36px}
+.mission p{font-size:14px;font-weight:400;color:#555;margin-top:6px;max-width:680px}
+.pulse{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px}
+.pulse .pl-label{font-family:'Bangers',cursive;font-size:13px;letter-spacing:.08em;color:var(--pop-pink)}
+.nudge{display:inline-flex;align-items:center;gap:7px;font-family:'Bangers',cursive;font-size:13px;letter-spacing:.05em;border:2px solid var(--pop-ink);border-radius:99px;padding:5px 14px;white-space:nowrap}
+.nudge.todo{background:var(--pop-yellow);box-shadow:2px 2px 0 var(--pop-pink)}
+.nudge.done{background:var(--pop-green);color:#0a3d1f}
+.how-link{font-family:'Bangers',cursive;font-size:14px;letter-spacing:.05em;color:var(--pop-pink);cursor:pointer;background:none;border:none;padding:0}
+.how-link:hover{text-decoration:underline wavy}
 </style>
 </head>
 <body>
@@ -610,15 +631,25 @@ input:focus,textarea:focus,select:focus{border-color:var(--pop-cyan);box-shadow:
       <label>PASSWORD</label>
       <input id="loginPass" type="password" autocomplete="current-password" required placeholder="••••••••">
       <button class="btn primary" id="loginBtn" type="submit" style="margin-top:24px;width:100%;justify-content:center">🔓 SIGN IN</button>
-      <p class="hint" style="text-align:center;margin-top:14px">No account yet? Ask Midhun to set one up for you.</p>
     </form>
+  </div>
+</div>
+
+<div id="onboardModal">
+  <div class="ob-card">
+    <h2>WELCOME TO FETS ACTIONABLES! ⚡</h2>
+    <p class="ob-sub">Two minutes to understand the whole thing:</p>
+    <div class="ob-step"><span class="ob-ico">🎯</span><div><b>1 · YOU GET ACTIONABLES</b><p>Real tasks — like "collect every internet bill" or "list all client site codes". Open yours, follow the steps, post updates, and add the information you collect.</p></div></div>
+    <div class="ob-step"><span class="ob-ico">📘</span><div><b>2 · FINISHED WORK BECOMES A STANDARD</b><p>When your task is approved, it becomes a permanent page in the <b>FETS Rulebook</b> — the official record of how our test centres run. Written by you, used forever.</p></div></div>
+    <div class="ob-step"><span class="ob-ico">🏆</span><div><b>3 · THE TEAM MISSION</b><p>When the rulebook hits its target, FETS is ready to open its next centre — built directly on this team's work. Post an update every day, even a small one. That's how the bar moves.</p></div></div>
+    <button class="btn primary" style="width:100%;justify-content:center;margin-top:16px" onclick="dismissOnboard()">GOT IT — LET'S GO! 🚀</button>
   </div>
 </div>
 
 <div id="app" style="display:block">
   <header class="topbar">
     <button class="logo" onclick="go('dash')">FETS <span>ACTIONABLES!</span></button>
-    <span class="top-tag">Cochin · Calicut · Mangalore soon 🚀</span>
+    <span class="top-tag">The FETS standards workspace</span>
     <button class="top-me" onclick="signOutUser()" title="Sign out"><span class="avatar sm" id="topMeAvatar" style="background:#bbb">?</span><strong id="topMeName">SIGNED OUT</strong></button>
   </header>
   <main class="main" id="main"><div class="spin">Loading…</div></main>
@@ -800,7 +831,7 @@ function signOutUser(){
 
 /* ---------- navigation ---------- */
 function go(v){
-  if((v==='assign'||v==='settings'||v==='team') && (!me || me.role!=='admin')){
+  if((v==='assign'||v==='settings'||v==='team'||v==='rollout') && (!me || me.role!=='admin')){
     toast('Admin access only'); return;
   }
   view=v; openActId=null; teamEditId=null;
@@ -870,52 +901,69 @@ function renderActs(){
 }
 
 /* ---------- dashboard = the menu (hub tiles) ---------- */
+const isToday = d => new Date(d).toDateString() === new Date().toDateString();
+const postedToday = name => acts.some(a=>a.actionable_updates.some(u=>u.kind!=='instruction' && u.staff && u.staff.name===name && isToday(u.created_at)));
+function showOnboard(){ $('onboardModal').style.display='flex'; }
+function dismissOnboard(){ localStorage.setItem('fets_onboarded','1'); $('onboardModal').style.display='none'; }
 function renderDash(){
   const live=acts.filter(a=>a.status!=='completed');
   const submitted=acts.filter(a=>a.status==='submitted');
   const completed=acts.filter(a=>a.status==='completed');
   const isAdmin=!!me&&me.role==='admin';
   const firstName=me?me.name.split(' ')[0]:'team';
-  const myCount=me?acts.filter(a=>mine(a)&&a.status!=='completed').length:0;
-  // rollout tile: named after the centre being launched
-  const launching=(centres||[]).filter(c=>c.status!=='live');
+  const myActs=me?acts.filter(a=>mine(a)&&a.status!=='completed'):[];
   const stds=centres?rolloutStds():[];
-  const roCentre=launching[0]||null;
-  let roPct=0;
-  if(roCentre&&stds.length){
-    const cleared=stds.filter(a=>{const r=rollout.find(x=>x.centre_id===roCentre.id&&x.actionable_id===a.id);return r&&(r.status==='done'||r.status==='na');}).length;
-    roPct=Math.round(cleared/stds.length*100);
-  }
+  const done=stds.length, target=Math.max(1,rolloutTarget);
+  const pct=Math.min(100,Math.round(done/target*100));
   const compDue=complianceDue();
+  const iPosted=me?postedToday(me.name):false;
+  const pulseNames=staff.filter(s=>postedToday(s.name)).map(s=>s.name);
   const teamCards = staff.map(s=>{
     const forMe = a => a.actionable_assignments.some(x=>x.staff && x.staff.id===s.id);
     const assigned = acts.filter(a=>forMe(a) && a.status!=='completed');
     const done = acts.filter(a=>forMe(a) && a.status==='completed');
     return `<div class="team-load-card"><div class="team-person">${av(s.name)}<div><strong>${esc(s.name)}</strong><small>${s.role==='admin'?'Workspace admin':'Team member'}</small></div></div>
-      <div class="team-numbers"><span><b>${assigned.length}</b> active</span><span><b>${done.length}</b> library</span></div></div>`;
+      <div class="team-numbers"><span><b>${assigned.length}</b> active</span><span><b>${done.length}</b> rulebook</span></div></div>`;
   }).join('');
+
+  // step 1: this person's own work, front and centre
+  const myWork = me ? (myActs.length
+    ? `<section class="studio-block" style="margin-top:0"><div class="studio-block-head"><div><span class="block-eyebrow">Step 1 · your part</span><h2>Your work</h2></div>
+        <span class="nudge ${iPosted?'done':'todo'}">${iPosted?'✔ POSTED TODAY':'🔥 POST AN UPDATE TODAY'}</span></div>
+        <div class="dashboard-action-grid">${myActs.map(cardHTML).join('')}</div></section>`
+    : `<section class="studio-block" style="margin-top:0"><div class="studio-block-head"><div><span class="block-eyebrow">Step 1 · your part</span><h2>Your work</h2></div></div>
+        <div class="empty"><div class="big">🌤️</div><p>Nothing on your plate yet${isAdmin?' — create and assign the first actionable below.':'. Midhun assigns the tasks — meanwhile, open ACTIONABLES below and read a finished standard to see what "done" looks like 📘'}</p></div></section>`) : '';
+
+  // step 2: the shared mission — the rulebook progress (no rollout jargon)
+  const mission = centres ? `<div class="mission">
+    <div class="studio-block-head" style="margin-bottom:2px"><div><span class="block-eyebrow">Step 2 · where it all goes</span><h2>THE FETS RULEBOOK 📘</h2></div>
+    ${isAdmin?`<button class="how-link" onclick="go('rollout')">expansion board →</button>`:''}</div>
+    <p>Every approved actionable becomes one page of the official FETS operating standards — the rules and guidelines our centres run on.
+    <b>${done} of ${target}</b> pages are written${submitted.length?` · ${submitted.length} awaiting review 🔍`:''}. When the book is complete, FETS opens its next centre, built on this team's work.</p>
+    <div class="lock-bar" style="margin:18px 0 6px;max-width:none"><span style="width:${pct}%"></span></div>
+    <div class="progress-caption"><span>${pct}% complete</span><b>${done}/${target}</b></div>
+    <div class="pulse"><span class="pl-label">TODAY'S PULSE:</span>${pulseNames.length?pulseNames.map(n=>av(n,true)).join(''):`<span class="soft">nobody has posted yet today — be the first ⚡</span>`}</div>
+  </div>` : '';
+
   $('main').innerHTML = `
     <div class="hub-welcome"><h1>HEY ${esc(firstName.toUpperCase())}! ⚡</h1>
-      <p>${myCount?`You have ${myCount} actionable${myCount>1?'s':''} on your plate. `:''}Standards approved here become the playbook for every new FETS centre.</p></div>
+      <p>This is where FETS writes its rulebook — one task at a time. <button class="how-link" onclick="showOnboard()">❓ how this works</button></p></div>
+    ${myWork}
+    ${mission}
     <div class="hub-grid">
       <button class="hub-tile" onclick="go('acts')"><span class="ht-ico">🎯</span><span class="ht-name">ACTIONABLES</span>
         <span class="ht-sub">${live.length} live · ${submitted.length} in review · ${completed.length} standard${completed.length===1?'':'s'}</span>
         ${live.length?`<span class="ht-count">${live.length}</span>`:''}</button>
-      <button class="hub-tile" onclick="go('rollout')"><span class="ht-ico">${rolloutLocked()?'🔒':'🚀'}</span><span class="ht-name">${esc((roCentre?roCentre.name:'Centre').toUpperCase())} ROLLOUT</span>
-        <span class="ht-sub">${rolloutLocked()
-          ? `${Math.min(100,Math.round(stds.length/rolloutTarget*100))}% to unlock — ${stds.length}/${rolloutTarget} standards approved`
-          : stds.length?`Unlocked · ${roPct}% of standards in place`:'The launch checklist for the next centre'}</span>
-        ${centres?`<div class="progress-line"><span style="width:${rolloutLocked()?Math.min(100,Math.round(stds.length/rolloutTarget*100)):roPct}%"></span></div>`:''}</button>
       <button class="hub-tile" onclick="go('compliance')"><span class="ht-ico">📅</span><span class="ht-name">COMPLIANCE</span>
         <span class="ht-sub">${compliance?(compDue?`${compDue} renewal${compDue>1?'s':''} need${compDue>1?'':'s'} attention`:'All renewals on track'):'Certs, audits, bills & renewals'}</span>
         ${compDue?`<span class="ht-count">${compDue}</span>`:''}</button>
       ${isAdmin?`
-      <button class="hub-tile admin" onclick="go('assign')"><span class="ht-ico">✨</span><span class="ht-name">ASSIGN ACTIONABLE</span><span class="ht-sub">Create a task and put the right people on it</span></button>
+      <button class="hub-tile admin" onclick="go('assign')"><span class="ht-ico">✨</span><span class="ht-name">ASSIGN ACTIONABLE</span><span class="ht-sub">Create a task — AI can expand it into full steps</span></button>
       <button class="hub-tile admin" onclick="go('team')"><span class="ht-ico">👥</span><span class="ht-name">MANAGE TEAM</span><span class="ht-sub">${staff.length} active member${staff.length===1?'':'s'} · edit or remove</span></button>
+      <button class="hub-tile admin" onclick="go('rollout')"><span class="ht-ico">${rolloutLocked()?'🔒':'🚀'}</span><span class="ht-name">EXPANSION BOARD</span><span class="ht-sub">${rolloutLocked()?`Locked · opens when the rulebook is complete`:'Launch checklist for the next centre'}</span></button>
       <button class="hub-tile admin" onclick="go('settings')"><span class="ht-ico">🔔</span><span class="ht-name">CHAT ALERTS</span><span class="ht-sub">Google Chat pings for every update</span></button>`:''}
     </div>
     ${complianceDashHTML()}
-    ${rolloutDashHTML()}
     <section class="studio-block"><div class="studio-block-head"><div><span class="block-eyebrow">Team overview</span><h2>Ownership at a glance</h2></div></div><div class="team-strip">${teamCards}</div></section>`;
 }
 // FETS OS strip on the dashboard: launch progress per upcoming centre (hidden while locked)
@@ -1634,15 +1682,20 @@ function nextCode(){
   const n = acts.map(a=>parseInt((a.code||'').replace(/\D/g,''),10)).filter(x=>!isNaN(x));
   return 'ACT-' + String((n.length?Math.max(...n):0)+1).padStart(2,'0');
 }
+let aiSteps = null;
 function renderAssign(){
   if(!me || me.role!=='admin'){
     view='dash'; return render();
   }
+  aiSteps = null;
   $('main').innerHTML = backHome() + `
-    <div class="page-head"><h1>ASSIGN A NEW ACTIONABLE ✨</h1><p>Create a task, give it a memorable code, and put the right people on it.</p></div>
+    <div class="page-head"><h1>ASSIGN A NEW ACTIONABLE ✨</h1><p>Type just the rough idea — AI can expand it into the full brief and step-by-step procedure.</p></div>
     <div class="form-card">
       <div class="code-preview">🔖 ${nextCode()} <small>auto-assigned code</small></div>
-      <label>TITLE</label><input id="fTitle" placeholder="e.g. Vendor Contracts Register">
+      <label>TITLE — EVEN A ROUGH IDEA IS FINE</label><input id="fTitle" placeholder="e.g. Vendor Contracts Register">
+      <div style="margin-top:12px"><button class="btn sm" id="aiExpandBtn" onclick="aiExpandTask()">✨ AI: EXPAND INTO A FULL TASK</button>
+        <span class="hint" style="display:inline-block;margin-left:10px">writes the purpose & steps for you — review before creating</span></div>
+      <div id="aiStepsPrev"></div>
       <label>WHAT'S THIS FOR? — POINT-WISE</label><textarea id="fDesc" style="height:110px;border-radius:16px" placeholder="2–3 short points, ONE PER LINE, e.g.:&#10;Track all vendor contracts for both centres.&#10;Covers AMC, housekeeping and security agencies.&#10;Phase 1: contact details and renewal dates."></textarea>
       <label>DUE DATE (OPTIONAL)</label><input type="date" id="fDue">
       <label>ASSIGN TEAM MEMBERS</label>
@@ -1673,7 +1726,45 @@ async function createAct(){
   await db.from('actionable_updates').insert({actionable_id:data.id, staff_id:me.id, kind:'status_change', message:`${me.name} created ${code} · ${title}${names?' and assigned it to '+names:''}.`});
   const instr=$('fInstr').value.trim();
   if(instr) await db.from('actionable_updates').insert({actionable_id:data.id, staff_id:me.id, kind:'instruction', message:instr});
+  if(aiSteps && aiSteps.length){
+    for(const s of aiSteps)
+      await db.from('actionable_updates').insert({actionable_id:data.id, staff_id:me.id, kind:'instruction', message:s});
+    aiSteps=null;
+  }
   await loadActs(); toast('🎉 '+code+' created!'); openActId=data.id; render();
+}
+// AI: expand a rough title into a full brief + step-by-step procedure
+async function aiExpandTask(){
+  if(!me || me.role!=='admin') return toast('Admin access only');
+  const title=$('fTitle').value.trim(); if(!title) return toast('Type a title first — even rough is fine');
+  let key = localStorage.getItem('fets_anthropic_key');
+  if(!key){
+    key = prompt('Paste your Anthropic API key (sk-ant-…).\nIt is stored only in THIS browser and sent only to api.anthropic.com.');
+    if(!key || !key.trim()) return;
+    key = key.trim(); localStorage.setItem('fets_anthropic_key', key);
+  }
+  const btn=$('aiExpandBtn'); btn.disabled=true; btn.textContent='✨ WRITING…';
+  const seed=$('fDesc').value.trim();
+  const ask = `You are the operations lead for FETS (Forun Testing & Educational Services), which runs Prometric/Pearson-VUE-style computer-based test centres in Cochin and Calicut, India, and is writing operating standards to open its next centre. A task ("actionable") will be assigned to a staff member. Expand this rough idea into a complete task.\n\nTITLE: ${title}\n${seed?`ROUGH NOTES: ${seed}\n`:''}\nReturn ONLY valid JSON, exactly this shape:\n{"purpose":["2-4 short one-line points explaining what this task is for and why it matters"],"steps":["3-7 concrete numbered steps the staff member should follow, each specific and practical"]}\nRules: where the task involves collecting information, one step must remind them to log each entry with a label like "<Centre> · <Item>" (e.g. "Cochin Centre · Internet — Airtel") so it lands in the comparison table; keep language simple and friendly; no markdown, no extra keys.`;
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:ask}]})
+    });
+    const j = await res.json();
+    if(j.error) throw new Error(j.error.message||'API error');
+    let text=(j.content&&j.content[0]&&j.content[0].text||'').trim().replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+    const d = JSON.parse(text);
+    $('fDesc').value = (d.purpose||[]).join('\n');
+    aiSteps = (d.steps||[]).map(s=>String(s)).filter(Boolean);
+    $('aiStepsPrev').innerHTML = aiSteps.length ? `<div class="steps" style="margin-top:14px"><b>📌 ${aiSteps.length} steps will be added automatically when you create:</b><br>${aiSteps.map((s,i)=>`${i+1}. ${esc(s)}`).join('<br>')}</div>` : '';
+    toast('✨ Task expanded — review, pick the team, hit CREATE');
+  }catch(e){
+    if(/authentication|invalid.*key|401/i.test(e.message)){ localStorage.removeItem('fets_anthropic_key'); toast('❌ API key rejected — try again with a valid key'); }
+    else toast('AI failed: '+e.message);
+  }
+  btn.disabled=false; btn.textContent='✨ AI: EXPAND INTO A FULL TASK';
 }
 async function addStaffDlg(){
   const name=prompt('New staff member\'s full name:'); if(!name||!name.trim()) return;
@@ -1821,6 +1912,7 @@ async function enterApp(session){
   await loadRollout(); await loadCompliance(); updateCounts();
   runComplianceEngine();
   go('dash');
+  if(!localStorage.getItem('fets_onboarded')) showOnboard();
 }
 (async function(){
   $('loginForm').onsubmit = doLogin;
